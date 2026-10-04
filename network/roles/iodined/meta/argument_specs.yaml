@@ -1,0 +1,45 @@
+---
+argument_specs:
+  main:
+    short_description: Install and configure the iodine DNS tunnel server
+    description: |
+      Installs iodine, renders /etc/default/iodine and enables/starts (or
+      disables/stops) iodined.service according to iodined.enabled.
+    author: Lee Garrett
+    options:
+      iodined:
+        type: dict
+        required: true
+        description: iodined role configuration
+        options:
+          enabled:
+            type: bool
+            default: true
+            description: Whether iodined.service is enabled and running.
+          conf:
+            type: dict
+            required: true
+            description: Settings rendered into /etc/default/iodine.
+            options:
+              params:
+                type: str
+                default: "-c"
+                description: Extra iodined arguments, see iodined(8).
+              public_ip:
+                type: str
+                description: >
+                  IP iodined listens on for DNS requests (-l). Defaults to
+                  ansible_facts.default_ipv4.address.
+              subnet:
+                type: str
+                required: true
+                description: Server tunnel IP, e.g. 10.0.0.1 or 10.0.0.1/27.
+              topdomain:
+                type: str
+                required: true
+                description: Domain delegated to this host, e.g. t.example.com.
+              password:
+                type: str
+                required: true
+                no_log: true
+                description: Password clients must use to connect.

@@ -1,0 +1,6 @@
+---
+iodined:
+  conf:
+    params: "-c"
+    public_ip: "{{ ansible_facts.default_ipv4.address }}"
+  enabled: true

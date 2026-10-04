@@ -1,0 +1,5 @@
+# {{ ansible_managed }}
+# Sourced by /etc/init.d/iodined and iodined.service
+START_IODINED="{{ "true" if iodined.enabled | bool else "false" }}"
+IODINED_ARGS="{{ iodined.conf.params }} -l {{ iodined.conf.public_ip }} {{ iodined.conf.subnet }} {{ iodined.conf.topdomain }}"
+IODINED_PASSWORD="{{ iodined.conf.password }}"
