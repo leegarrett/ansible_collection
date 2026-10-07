@@ -1,6 +1,7 @@
 ---
 # Must precede install, else postinst masks iodined.service
 - name: Updating config
+  become: true
   ansible.builtin.template:
     src: etc/default/iodine.j2
     dest: /etc/default/iodine
@@ -8,11 +9,13 @@
   notify: restart iodined
 
 - name: Installing iodine
+  become: true
   ansible.builtin.apt:
     name: iodine
   register: _iodined_apt
 
 - name: Enable/disable iodined systemd unit
+  become: true
   ansible.builtin.systemd_service:
     name: iodined
     enabled: "{{ iodined.enabled | bool }}"
