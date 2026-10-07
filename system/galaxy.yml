@@ -1,0 +1,13 @@
+---
+namespace: leegarrett
+name: system
+version: 0.1.0
+readme: README.md
+authors:
+  - Lee Garrett <lgarrett@rocketjump.eu>
+description: Base OS configuration roles
+license:
+  - AGPL-3.0-or-later
+tags: []
+dependencies: {}
+build_ignore: []
