@@ -1,0 +1,19 @@
+---
+- name: Install procps
+  become: true
+  apt:
+    name:
+      - procps
+
+- name: Updating sysctl config
+  become: true
+  ansible.builtin.template:
+    src: etc/sysctl.d/90-ansible.conf.j2
+    dest: /etc/sysctl.d/90-ansible.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart systemd-sysctl
+
+- name: Flush handlers
+  ansible.builtin.meta: flush_handlers

@@ -1,0 +1,17 @@
+---
+argument_specs:
+  main:
+    short_description: Set kernel parameters via sysctl
+    description: |
+      Renders the sysctl dict into /etc/sysctl.d/90-ansible.conf and restarts
+      systemd-sysctl.service to apply it. Keys removed from the dict stay at
+      their current runtime value until reboot.
+    author: Lee Garrett
+    options:
+      sysctl:
+        type: dict
+        default: {}
+        description: >
+          Kernel parameters as a nested dict mirroring the sysctl key path,
+          e.g. net.ipv4.ip_forward is sysctl.net.ipv4.ip_forward. Leaf values
+          are written verbatim.

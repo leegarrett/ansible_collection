@@ -1,0 +1,12 @@
+#jinja2:lstrip_blocks: True
+# {{ ansible_managed }}
+{% macro flatten(tree, path) %}
+{% for key, value in tree.items() | sort %}
+{% if value is mapping %}
+{{ flatten(value, path + [key]) }}
+{%- else %}
+{{ (path + [key]) | join('/') }} = {{ value }}
+{% endif %}
+{% endfor %}
+{% endmacro %}
+{{ flatten(sysctl, []) }}
