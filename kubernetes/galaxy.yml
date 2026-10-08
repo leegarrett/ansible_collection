@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+---
+namespace: leegarrett
+name: kubernetes
+version: 0.1.0
+readme: README.md
+authors:
+  - Lee Garrett <lgarrett@rocketjump.eu>
+description: Collection of roles related to kubernetes
+license:
+  - AGPL-3.0-or-later
+tags:
+  - kubernetes
+repository: https://github.com/leegarrett/ansible_collection/
+issues: https://github.com/leegarrett/ansible_collection/issues
