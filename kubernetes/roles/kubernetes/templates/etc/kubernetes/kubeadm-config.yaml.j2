@@ -1,0 +1,38 @@
+#jinja2:lstrip_blocks: True, trim_blocks: True
+---
+# {{ ansible_managed }}
+# This file was generated on {{ now(utc=true,fmt='%Y-%m-%d %H:%M:%S') }}.
+# Only read by "kubeadm init", it does not reconfigure a running cluster.
+{% if kubernetes.node_ip | length > 0 or kubernetes.kubelet_extra_args %}
+apiVersion: kubeadm.k8s.io/v1beta4
+kind: InitConfiguration
+{% if kubernetes.node_ip | length > 0 %}
+localAPIEndpoint:
+  # kubeadm would take the default route's address, and kube-apiserver refuses
+  # to start on one from another family than the primary service CIDR.
+  advertiseAddress: {{ kubernetes.node_ip | first }}
+{% endif %}
+{% if kubernetes.kubelet_extra_args %}
+nodeRegistration:
+  # v1beta4 takes extraArgs as name/value pairs rather than a mapping.
+  kubeletExtraArgs:
+{% for arg in kubernetes.kubelet_extra_args %}
+    - name: {{ arg.name }}
+      value: {{ arg.value }}
+{% endfor %}
+{% endif %}
+---
+{% endif %}
+apiVersion: kubeadm.k8s.io/v1beta4
+kind: ClusterConfiguration
+controlPlaneEndpoint: {{ kubernetes.controlplane_endpoint }}
+networking:
+  podSubnet: {{ kubernetes.cidr | join(",") }}
+  serviceSubnet: {{ kubernetes.service_cidr | join(",") }}
+---
+apiVersion: kubelet.config.k8s.io/v1beta1
+kind: KubeletConfiguration
+clusterDNS:
+  - {{ kubernetes.dns_service_ip }}
+# Request a serving cert from the cluster CA instead of self-signing one.
+serverTLSBootstrap: {{ kubernetes.server_tls_bootstrap | bool | lower }}

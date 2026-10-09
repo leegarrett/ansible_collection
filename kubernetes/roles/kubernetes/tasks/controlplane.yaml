@@ -1,0 +1,55 @@
+---
+- name: Check for existing installation
+  become: true
+  ansible.builtin.stat:
+    path: /etc/kubernetes/controller-manager.conf
+  register: stat_result
+
+- name: Check if kubeadm-config is already written
+  ansible.builtin.stat:
+    path: /etc/kubernetes/kubeadm-config.yaml
+  register: _kubeadm_config_file
+
+
+# The subnets have to come from a config file, "kubeadm init" has no flag for
+# the kubelet's clusterDNS.
+- name: Write kubeadm config
+  become: true
+  ansible.builtin.template:
+    src: etc/kubernetes/kubeadm-config.yaml.j2
+    dest: /etc/kubernetes/kubeadm-config.yaml
+    owner: root
+    group: root
+    mode: "0644"
+  # only write it once; after initialization it's just a reference.
+  when: not _kubeadm_config_file.stat.exists
+
+# "kubeadm init" itself talks to the new apiserver through the endpoint.
+- name: Point the control plane endpoint at this node
+  ansible.builtin.include_tasks: controlplane_endpoint.yaml
+
+# only run when the control plane is not installed yet
+- name: Initialize kubernetes control plane
+  become: true
+  ansible.builtin.shell: >
+    kubeadm init
+    --config=/etc/kubernetes/kubeadm-config.yaml
+    --skip-phases=addon/kube-proxy
+  changed_when: true
+  when: "not stat_result.stat.isreg|d(false)"
+
+# Setup ~/.kube/config for next task
+- name: Install kubectl
+  ansible.builtin.include_role:
+    name: kubectl
+
+- name: Install kube user config
+  ansible.builtin.include_tasks: kube_access.yaml
+
+- name: Allow scheduling on the control-plane node
+  kubernetes.core.k8s_taint:
+    state: absent
+    name: "{{ ansible_facts.hostname }}"
+    taints:
+      - key: node-role.kubernetes.io/control-plane
+        effect: NoSchedule

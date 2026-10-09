@@ -1,0 +1,61 @@
+---
+# tasks to wipe an kubernetes installation
+- name: Check if kubeadm exists
+  ansible.builtin.stat:
+    path: /usr/bin/kubeadm
+  register: stat_result
+
+- name: Run kubeadm reset
+  ansible.builtin.command: /usr/bin/kubeadm reset -f
+  become: true
+  changed_when: true
+  environment:
+    KUBECONFIG: /etc/kubernetes/admin.conf
+  when: stat_result.stat.executable | d(false)
+
+- name: Remove all kubernetes packages
+  become: true
+  ansible.builtin.apt:
+    name: "{{ kubernetes.packages + ['containerd'] }}"
+    state: absent
+    allow_change_held_packages: true
+    autoremove: true
+
+- name: Remove all created files
+  become: true
+  ansible.builtin.file:
+    state: absent
+    path: "/{{ item }}"
+  # the templates are named after their destination, minus the .j2 suffix
+  loop: |
+    {{
+      query('filetree', '../templates/')
+      | selectattr('state', 'eq', 'file')
+      | map(attribute='path')
+      | map('regex_replace', '[.]j2$', '')
+    }}
+  loop_control:
+    label: "Deleting /{{ item }}"
+
+- name: Drop the control plane endpoint from /etc/hosts
+  become: true
+  ansible.builtin.blockinfile:
+    path: /etc/hosts
+    marker: "# {mark} ANSIBLE MANAGED BLOCK kubernetes.controlplane_endpoint"
+    state: absent
+
+- name: Wipe the containerd storage
+  become: true
+  ansible.builtin.file:
+    state: absent
+    path: "{{ item }}"
+  loop:
+    - /var/lib/containerd
+    - /etc/cni/
+    - /var/log/pods/
+    - /var/log/containers/
+
+- name: Wipe the kube config
+  ansible.builtin.file:
+    state: absent
+    path: "~{{ ansible_facts.user_id }}/.kube/"

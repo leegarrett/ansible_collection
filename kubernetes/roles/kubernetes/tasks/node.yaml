@@ -1,0 +1,92 @@
+---
+- name: Enable and start kubelet
+  become: true
+  ansible.builtin.systemd:
+    name: kubelet.service
+    enabled: true
+    masked: false
+    state: started
+
+- name: Check if already joined to control plane
+  ansible.builtin.stat:
+    path: /etc/kubernetes/pki/ca.crt
+  register: stat_result
+
+- name: Join the cluster unless already joined
+  when: "not stat_result.stat.isreg|d(false)"
+  become: true
+  block:
+    # kubeadm uses controlplane_endpoint for everything after discovery, so
+    # until this node joins the name has to reach the existing control plane.
+    - name: Resolve the control plane endpoint to the existing control plane
+      ansible.builtin.include_tasks: controlplane_endpoint.yaml
+      vars:
+        _endpoint_ips: ["{{ kubernetes.controlplane_ip }}"]
+
+    - name: Upload control plane certificates and print the certificate key
+      delegate_to: "{{ kubernetes.controlplane }}"
+      # Without --config kubeadm dials the IPv4 default route, not a cert SAN.
+      ansible.builtin.shell: >
+        kubeadm init phase upload-certs --upload-certs
+        --config=/etc/kubernetes/kubeadm-config.yaml
+      changed_when: true
+      register: upload_certs
+
+    - name: Fetch token from kubernetes control plane
+      delegate_to: "{{ kubernetes.controlplane }}"
+      ansible.builtin.shell: >
+        kubeadm token create --print-join-command --ttl 5m
+        --description "created by ansible"
+      changed_when: true
+      register: join_cmd
+
+    # "kubeadm join" rejects --config alongside the flags that
+    # --print-join-command emits, so the file has to carry them too. This
+    # needs kubernetes.controlplane_endpoint set (see controlplane.yaml).
+    - name: Write the kubeadm join config
+      become: true
+      vars:
+        _join_endpoint: "{{ join_cmd.stdout
+          | regex_search('kubeadm join\\s+(\\S+)', '\\1') | first }}"
+        _join_token: "{{ join_cmd.stdout
+          | regex_search('--token\\s+(\\S+)', '\\1') | first }}"
+        _join_ca_hash: "{{ join_cmd.stdout
+          | regex_search('--discovery-token-ca-cert-hash\\s+(\\S+)', '\\1')
+          | first }}"
+        _join_cert_key: "{{ upload_certs.stdout_lines | last }}"
+      ansible.builtin.template:
+        src: etc/kubernetes/kubeadm-join-config.yaml.j2
+        dest: /etc/kubernetes/kubeadm-join-config.yaml
+        owner: root
+        group: root
+        mode: "0600"
+      no_log: true
+
+    - name: Join the kubernetes cluster as an additional control plane
+      become: true
+      ansible.builtin.command:
+        cmd: kubeadm join --config=/etc/kubernetes/kubeadm-join-config.yaml
+      changed_when: true
+      register: join_result
+
+# Only now, since "kubeadm join" above still had to reach the existing
+# control plane through the endpoint.
+- name: Point the control plane endpoint at this node
+  ansible.builtin.include_tasks: controlplane_endpoint.yaml
+
+# Setup ~/.kube/config for next task
+- name: Install kubectl
+  ansible.builtin.include_role:
+    name: kubectl
+
+- name: Install kube user config
+  ansible.builtin.include_tasks: kube_access.yaml
+
+- name: Allow scheduling on this control-plane node
+  delegate_to: "{{ kubernetes.controlplane }}"
+  kubernetes.core.k8s_taint:
+    state: absent
+    name: "{{ ansible_facts.hostname }}"
+    taints:
+      - key: node-role.kubernetes.io/control-plane
+        effect: NoSchedule

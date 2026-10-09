@@ -1,0 +1,59 @@
+---
+# basic role to set up a machine for usage with kubernetes.
+# applies both to nodes as well as master
+- name: Disable swap
+  become: true
+  ansible.builtin.command: swapoff -a
+  changed_when: true
+  when: ansible_facts.swaptotal_mb > 0
+
+- name: Remove swap entries from /etc/fstab
+  become: true
+  ansible.builtin.replace:
+    path: /etc/fstab
+    regexp: '^([^#].*\sswap\s.*)$'
+    replace: '# \1'
+
+- name: Create dirs
+  become: true
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  loop:
+    - /etc/kubernetes/
+    - /etc/modules-load.d/
+    - /etc/sysctl.d/
+
+- name: Install kubernetes packages
+  become: true
+  ansible.builtin.apt:
+    name: >-
+      {{ kubernetes.packages
+         + ['acl', 'cri-tools', 'procps', 'python3-kubernetes'] }}
+
+
+- name: Load kernel modules needed for kubernetes
+  become: true
+  ansible.builtin.template:
+    src: etc/modules-load.d/kubernetes.conf.j2
+    dest: /etc/modules-load.d/kubernetes.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart systemd-modules-load
+
+- name: Enable networking sysctls
+  become: true
+  ansible.builtin.template:
+    src: etc/sysctl.d/kubernetes.conf.j2
+    dest: /etc/sysctl.d/kubernetes.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart systemd-sysctl
+
+- name: Flush handlers
+  ansible.builtin.meta: flush_handlers

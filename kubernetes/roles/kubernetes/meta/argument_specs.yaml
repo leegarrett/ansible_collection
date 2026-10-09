@@ -1,0 +1,123 @@
+---
+argument_specs:
+  main:
+    short_description: Set up a machine for Kubernetes (nodes and masters)
+    options:
+      kubernetes:
+        description: Kubernetes configuration
+        type: dict
+        required: true
+        options:
+          cidr:
+            description: >
+              Pod network CIDRs, written to the kubeadm config as
+              "networking.podSubnet". One entry per address family, at most
+              two. The first entry is the cluster's primary family and has to
+              match the first entry of "service_cidr".
+            type: list
+            elements: str
+            required: true
+          service_cidr:
+            description: >
+              CIDRs the cluster allocates service IPs from, written to the
+              kubeadm config as "networking.serviceSubnet". Same rules as
+              "cidr", and must not overlap it. An IPv6 entry has to be /108
+              or smaller.
+            type: list
+            elements: str
+            required: true
+          dns_service_ip:
+            description: >
+              ClusterIP of the cluster DNS service, written to the kubelet's
+              "clusterDNS". Must be inside the first "service_cidr". Defaults
+              to that subnet's 10th address, which is the one kubeadm gives
+              the kube-dns service. Single-valued even on a dual-stack
+              cluster, since kubeadm creates kube-dns as a single-stack
+              service.
+            type: str
+            required: true
+          node_ip:
+            description: >
+              Addresses the kubelet registers as this node's InternalIPs,
+              passed as "--node-ip", one per address family in the same order
+              as "cidr". Defaults to the ipv4/ipv6 keys of
+              k8s_ip_addresses[inventory_hostname], narrowed to the families
+              in "cidr". An empty list leaves the flag off and lets the
+              kubelet pick an address itself.
+            type: list
+            elements: str
+          controlplane:
+            description: hostname for the kubernetes controlplane
+            type: str
+            required: true
+          controlplane_ip:
+            description: >
+              Address a joining node uses to reach the control plane, in the
+              cluster's primary address family. Defaults to the ipv4/ipv6
+              key of k8s_ip_addresses[controlplane] that matches the first
+              entry of "cidr". Needed because a node cannot resolve
+              "controlplane_endpoint" until it has joined.
+            type: str
+          controlplane_endpoint:
+            description: >
+              Stable address of the cluster's API, written to the kubeadm
+              config as "controlPlaneEndpoint" and baked into every kubeconfig
+              kubeadm generates. Takes a "host" or "host:port". Since every
+              host joins as a control plane, the role also maps the host part
+              to the loopback in "/etc/hosts", so each node reaches the API
+              through its own apiserver.
+            type: str
+            required: true
+          region:
+            description: >
+              Value for the node's "topology.kubernetes.io/region" label,
+              e.g. "FSN1". Undefined by default, which leaves the label
+              alone.
+            type: str
+          zone:
+            description: >
+              Value for the node's "topology.kubernetes.io/zone" label,
+              e.g. "FSN1-DC24". Undefined by default, which leaves the
+              label alone.
+            type: str
+          node_labels:
+            description: >
+              Labels the kubelet sets on itself at registration, written to
+              the kubeadm config as part of "nodeRegistration". Defaults to
+              the "topology.kubernetes.io/region" and
+              "topology.kubernetes.io/zone" labels built from "region" and
+              "zone", dropping whichever of the two is unset. Only labels on
+              the kubelet's own allowlist get past the "NodeRestriction"
+              admission plugin.
+            type: dict
+          kubelet_extra_args:
+            description: >
+              Kubelet flags for node registration, written to the kubeadm
+              config as "nodeRegistration.kubeletExtraArgs". A list of
+              name/value pairs, as the v1beta4 API wants. Defaults to
+              "node-labels" and "node-ip" derived from "node_labels" and
+              "node_ip"; kubeadm only applies it at "kubeadm init"/"kubeadm
+              join" time, never to a running node.
+            type: list
+            elements: dict
+          server_tls_bootstrap:
+            description: >
+              Make each kubelet request its serving certificate from the
+              cluster CA via the TLS bootstrap instead of self-signing one,
+              written to the kubelet config as "serverTLSBootstrap". The role
+              then approves each node's "kubernetes.io/kubelet-serving" CSR,
+              which nothing in the cluster does on its own.
+            type: bool
+            default: false
+          packages:
+            description: List of APT packages to install for Kubernetes
+            type: list
+            elements: str
+            required: true
+          kernel_modules:
+            description: Kernel modules to load for Kubernetes networking
+            type: list
+            elements: str
+          sysctl:
+            description: Sysctl settings required for Kubernetes networking
+            type: dict

@@ -1,0 +1,5 @@
+#jinja2:lstrip_blocks: True
+# {{ ansible_managed }}
+{% for key, value in kubernetes.sysctl.items() | sort %}
+{{ key }} = {{ value }}
+{% endfor %}

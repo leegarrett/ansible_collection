@@ -1,0 +1,27 @@
+---
+- name: Grant the admin users read access to admin.conf
+  become: true
+  ansible.posix.acl:
+    path: /etc/kubernetes/admin.conf
+    entity: "{{ ansible_facts.user_id }}"
+    etype: user
+    permissions: r
+    state: present
+
+- name: Create ~/.kube directory for user
+  ansible.builtin.file:
+    state: directory
+    path: "~{{ ansible_facts.user_id }}/.kube/"
+    owner: "{{ ansible_facts.user_id }}"
+    group: "{{ ansible_facts.user_id }}"
+    mode: '0700'
+
+- name: Symlink ~/.kube/config to the local admin.conf
+  ansible.builtin.file:
+    state: link
+    src: /etc/kubernetes/admin.conf
+    dest: "~{{ ansible_facts.user_id }}/.kube/config"
+    owner: "{{ ansible_facts.user_id }}"
+    group: "{{ ansible_facts.user_id }}"
+    force: true
+    follow: false

@@ -1,0 +1,43 @@
+---
+# kubelet links this to the issued cert once its serving CSR is approved.
+- name: Check for an issued kubelet serving certificate
+  become: true
+  ansible.builtin.stat:
+    path: /var/lib/kubelet/pki/kubelet-server-current.pem
+  register: _kubelet_serving_cert
+
+# kube-controller-manager auto-approves only client CSRs; serving CSRs stay
+# pending until approved. It also garbage-collects approved CSRs after an
+# hour, so a node that already has its certificate must not wait for one.
+- name: Approve this node's kubelet serving CSR
+  vars:
+    _signer: kubernetes.io/kubelet-serving
+    _user: "system:node:{{ ansible_facts.hostname }}"
+  when:
+    - not ansible_check_mode
+    - not _kubelet_serving_cert.stat.exists | d(false)
+  block:
+    - name: Wait for this node's pending kubelet serving CSR
+      delegate_to: "{{ kubernetes.controlplane }}"
+      kubernetes.core.k8s_info:
+        api_version: certificates.k8s.io/v1
+        kind: CertificateSigningRequest
+      register: _csrs
+      until: _csrs.resources | d([])
+        | selectattr('spec.signerName', 'eq', _signer)
+        | selectattr('spec.username', 'eq', _user)
+        | rejectattr('status.conditions', 'defined')
+        | length > 0
+      retries: 10
+      delay: 3
+
+    - name: Approve this node's pending kubelet serving CSRs
+      delegate_to: "{{ kubernetes.controlplane }}"
+      ansible.builtin.command:
+        cmd: kubectl certificate approve {{ item }}
+      changed_when: true
+      loop: "{{ _csrs.resources | d([])
+        | selectattr('spec.signerName', 'eq', _signer)
+        | selectattr('spec.username', 'eq', _user)
+        | rejectattr('status.conditions', 'defined')
+        | map(attribute='metadata.name') | list }}"

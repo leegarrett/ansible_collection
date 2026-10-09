@@ -1,0 +1,32 @@
+#jinja2:lstrip_blocks: True, trim_blocks: True
+---
+# {{ ansible_managed }}
+# This file was generated on {{ now(utc=true,fmt='%Y-%m-%d %H:%M:%S') }}.
+# Only read by "kubeadm join"; kept afterwards as a record of the join. Both
+# the token and the certificate key in it expire within hours.
+apiVersion: kubeadm.k8s.io/v1beta4
+kind: JoinConfiguration
+discovery:
+  bootstrapToken:
+    apiServerEndpoint: "{{ _join_endpoint }}"
+    token: {{ _join_token }}
+    caCertHashes:
+      - {{ _join_ca_hash }}
+# Its presence is what promotes this node to an additional control plane.
+controlPlane:
+  certificateKey: {{ _join_cert_key }}
+{% if kubernetes.node_ip | length > 0 %}
+  localAPIEndpoint:
+    # As on the first control plane: kubeadm would take the default route's
+    # address, which kube-apiserver rejects outside the primary service CIDR.
+    advertiseAddress: {{ kubernetes.node_ip | first }}
+{% endif %}
+{% if kubernetes.kubelet_extra_args %}
+nodeRegistration:
+  # v1beta4 takes extraArgs as name/value pairs rather than a mapping.
+  kubeletExtraArgs:
+{% for arg in kubernetes.kubelet_extra_args %}
+    - name: {{ arg.name }}
+      value: {{ arg.value }}
+{% endfor %}
+{% endif %}

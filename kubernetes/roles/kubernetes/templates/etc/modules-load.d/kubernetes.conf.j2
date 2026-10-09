@@ -1,0 +1,5 @@
+#jinja2:lstrip_blocks: True
+# {{ ansible_managed }}
+{% for i in kubernetes.kernel_modules | sort %}
+{{ i }}
+{% endfor %}

@@ -1,0 +1,20 @@
+---
+# Every host here runs its own apiserver, and the kubeconfigs kubeadm writes
+# address it through controlplane_endpoint. Point that name at the loopback so
+# it keeps working without the name resolving cluster-externally. Callers pass
+# _endpoint_ips while a node still has to reach another host's apiserver.
+- name: Resolve the control plane endpoint
+  become: true
+  vars:
+    # kubeadm accepts controlPlaneEndpoint as "host" or "host:port".
+    _endpoint: "{{ kubernetes.controlplane_endpoint | split(':') | first }}"
+    _loopback: >-
+      {{ kubernetes.cidr | ansible.utils.ipaddr('version')
+         | map('extract', {4: '127.0.0.1', 6: '::1'}) | list }}
+  ansible.builtin.blockinfile:
+    path: /etc/hosts
+    marker: "# {mark} ANSIBLE MANAGED BLOCK kubernetes.controlplane_endpoint"
+    block: |
+      {% for address in _endpoint_ips | d(_loopback) %}
+      {{ address }} {{ _endpoint }}
+      {% endfor %}

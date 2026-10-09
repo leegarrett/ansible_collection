@@ -1,0 +1,50 @@
+---
+kubernetes:
+  cidr:
+    - 10.69.0.0/16
+  service_cidr:
+    - 10.96.0.0/12
+  # 10th address of the primary service_cidr, the IP kubeadm gives kube-dns
+  dns_service_ip: >-
+    {{ kubernetes.service_cidr | first | ansible.utils.ipaddr('10')
+       | ansible.utils.ipaddr('address') }}
+  # Ordered and filtered like cidr; kubelet rejects a family the cluster
+  # has no CIDR for.
+  node_ip: >-
+    {{ kubernetes.cidr | ansible.utils.ipaddr('version')
+       | map('extract', {4: k8s_ip_addresses[inventory_hostname].ipv4 | d(''),
+                         6: k8s_ip_addresses[inventory_hostname].ipv6 | d('')})
+       | select('truthy') | list }}
+  # The joining node cannot resolve controlplane_endpoint before it joins.
+  controlplane_ip: >-
+    {{ kubernetes.cidr | ansible.utils.ipaddr('version') | first
+       | extract({4: k8s_ip_addresses[kubernetes.controlplane].ipv4 | d(''),
+                  6: k8s_ip_addresses[kubernetes.controlplane].ipv6 | d('')}) }}
+  server_tls_bootstrap: false
+  # Labels with an empty value are dropped, not set to "".
+  node_labels: >-
+    {{ {'topology.kubernetes.io/region': kubernetes.region | d(''),
+        'topology.kubernetes.io/zone': kubernetes.zone | d('')}
+       | dict2items | selectattr('value', 'truthy') | items2dict }}
+  # kubeadm only applies these at "kubeadm init"/"kubeadm join" time.
+  kubelet_extra_args: >-
+    {{ ([{'name': 'node-labels',
+          'value': kubernetes.node_labels.keys()
+                   | zip(kubernetes.node_labels.values())
+                   | map('join', '=') | join(',')}]
+        if kubernetes.node_labels else [])
+       + ([{'name': 'node-ip', 'value': kubernetes.node_ip | join(',')}]
+          if kubernetes.node_ip else []) }}
+  kernel_modules:
+    - br_netfilter
+    - overlay
+  packages:
+    - kubeadm
+    - kubectl
+    - kubelet
+  sysctl:
+    'net.bridge.bridge-nf-call-ip6tables': 1
+    'net.bridge.bridge-nf-call-iptables': 1
+    'net.ipv4.ip_forward': 1
+    'net.ipv6.conf.all.forwarding': 1
+    'net.netfilter.nf_conntrack_max': 1000000

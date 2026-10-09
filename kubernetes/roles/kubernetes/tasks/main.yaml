@@ -1,0 +1,109 @@
+---
+- name: Validate the pod and service CIDRs
+  ansible.builtin.assert:
+    that:
+      - kubernetes.cidr | ansible.utils.ipaddr('net') | length
+        == kubernetes.cidr | length
+      - kubernetes.service_cidr | ansible.utils.ipaddr('net') | length
+        == kubernetes.service_cidr | length
+    fail_msg: >
+      kubernetes.cidr ({{ kubernetes.cidr | join(', ') }}) and
+      kubernetes.service_cidr ({{ kubernetes.service_cidr | join(', ') }})
+      take a list of valid subnets, one per address family!
+
+# kubeadm takes the cluster's primary family from the first entry of each.
+- name: Validate the address families of the pod and service CIDRs
+  vars:
+    _families: "{{ kubernetes.cidr | ansible.utils.ipaddr('version') }}"
+  ansible.builtin.assert:
+    that:
+      - _families | unique | length == _families | length
+      - _families == kubernetes.service_cidr | ansible.utils.ipaddr('version')
+    fail_msg: >
+      kubernetes.cidr and kubernetes.service_cidr must hold at most one CIDR
+      per address family, listed in the same order!
+
+- name: Validate kubernetes.dns_service_ip
+  ansible.builtin.assert:
+    that:
+      - kubernetes.service_cidr | first
+        | ansible.utils.network_in_network(kubernetes.dns_service_ip)
+    fail_msg: >
+      kubernetes.dns_service_ip ({{ kubernetes.dns_service_ip }}) is not
+      inside the primary kubernetes.service_cidr
+      ({{ kubernetes.service_cidr | first }})!
+
+# The apiserver caps the service subnet at 2^20 addresses.
+- name: Validate the size of an IPv6 service CIDR
+  ansible.builtin.assert:
+    that:
+      - kubernetes.service_cidr | ansible.utils.ipv6
+        | ansible.utils.ipaddr('prefix') | select('lt', 108) | list == []
+    fail_msg: >
+      An IPv6 kubernetes.service_cidr must be /108 or smaller. Got:
+      {{ kubernetes.service_cidr | ansible.utils.ipv6 | join(', ') }}
+
+# Cross-family pairs are never contained in each other, so they are no-ops.
+- name: Validate the pod CIDRs do not overlap the service CIDRs
+  ansible.builtin.assert:
+    that:
+      - not item.0 | ansible.utils.network_in_network(item.1)
+      - not item.1 | ansible.utils.network_in_network(item.0)
+    fail_msg: >
+      kubernetes.cidr ({{ item.0 }}) overlaps
+      kubernetes.service_cidr ({{ item.1 }})!
+  loop: "{{ kubernetes.cidr | product(kubernetes.service_cidr) | list }}"
+
+# Groups without k8s_ip_addresses get no --node-ip at all, which is fine.
+- name: Validate kubernetes.node_ip covers every cluster address family
+  ansible.builtin.assert:
+    that: kubernetes.node_ip | length == kubernetes.cidr | length
+    fail_msg: >
+      k8s_ip_addresses[{{ inventory_hostname }}] is missing an address for one
+      of the address families in kubernetes.cidr
+      ({{ kubernetes.cidr | join(', ') }})!
+  when: kubernetes.node_ip | length > 0
+
+# Common setup applies to both control-plane and worker nodes.
+- name: Common Kubernetes host setup
+  ansible.builtin.include_tasks: common.yaml
+
+# Dispatch depending on whether this host is the control plane.
+- name: Initialize Kubernetes control plane
+  ansible.builtin.include_tasks: controlplane.yaml
+  when: inventory_hostname == kubernetes.controlplane
+
+- name: Join host to the Kubernetes cluster
+  ansible.builtin.include_tasks: node.yaml
+  when: inventory_hostname != kubernetes.controlplane
+
+# kubelet cannot relabel an already registered node; a worker has no kubeconfig.
+- name: Set the node's topology region label
+  delegate_to: "{{ kubernetes.controlplane }}"
+  kubernetes.core.k8s:
+    state: patched
+    api_version: v1
+    kind: Node
+    name: "{{ ansible_facts.hostname }}"
+    definition:
+      metadata:
+        labels:
+          topology.kubernetes.io/region: "{{ kubernetes.region }}"
+  when: kubernetes.region | d('') is truthy
+
+- name: Set the node's topology zone label
+  delegate_to: "{{ kubernetes.controlplane }}"
+  kubernetes.core.k8s:
+    state: patched
+    api_version: v1
+    kind: Node
+    name: "{{ ansible_facts.hostname }}"
+    definition:
+      metadata:
+        labels:
+          topology.kubernetes.io/zone: "{{ kubernetes.zone }}"
+  when: kubernetes.zone | d('') is truthy
+
+- name: Approve the kubelet serving certificates
+  ansible.builtin.include_tasks: kubelet_serving_certs.yaml
+  when: kubernetes.server_tls_bootstrap | bool
