@@ -1,0 +1,20 @@
+containerd:
+  config:
+    version: 3
+    plugins:
+      "io.containerd.cri.v1.runtime":
+        containerd:
+          runtimes:
+            runc:
+              options:
+                SystemdCgroup: true
+  packages:
+    - containerd
+crictl:
+  config:
+    debug: false
+    runtime-endpoint: >-
+      {{ 'unix://'
+      ~ (containerd.config.grpc.address | default('/run/containerd/containerd.sock'))
+      }}
+    timeout: 10

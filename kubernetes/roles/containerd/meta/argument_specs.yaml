@@ -1,0 +1,45 @@
+argument_specs:
+  main:
+    short_description: Install and configure containerd and crictl
+    options:
+      containerd:
+        type: dict
+        description: containerd configuration
+        options:
+          config:
+            type: dict
+            description: containerd runtime config (written to /etc/containerd/config.toml)
+            options:
+              version:
+                type: int
+                default: 3
+                description: containerd config file format version
+              plugins:
+                type: dict
+                description: containerd plugin configuration
+          packages:
+            type: list
+            elements: str
+            default: [containerd]
+            description: APT packages to install
+      crictl:
+        type: dict
+        description: crictl client configuration
+        options:
+          config:
+            type: dict
+            description: crictl configuration options
+            options:
+              debug:
+                type: bool
+                default: false
+              image-endpoint:
+                type: str
+                description: Defaults to containerd.config.grpc.address, fallback unix:///run/containerd/containerd.sock
+              runtime-endpoint:
+                type: str
+                description: Defaults to containerd.config.grpc.address, fallback unix:///run/containerd/containerd.sock
+              timeout:
+                type: int
+                default: 10
+                description: Request timeout in seconds
