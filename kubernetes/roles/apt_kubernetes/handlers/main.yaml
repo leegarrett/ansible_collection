@@ -1,0 +1,6 @@
+# SPDX-License-Identifier: AGPL-3.0
+---
+- name: Run apt update
+  become: true
+  ansible.builtin.apt:
+    update_cache: true

@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: AGPL-3.0
+---
+- name: Install sq to lint the repo key
+  become: true
+  ansible.builtin.apt:
+    name: sq
+  check_mode: false
+
+- name: Lint the repo key
+  ansible.builtin.command:
+    argv:
+      - sq
+      - --cert-store=none
+      - --key-store=none
+      - cert
+      - lint
+      - --cert-file
+      - "-"
+    stdin: "{{ apt_kubernetes.signed_by }}"
+  changed_when: false
+  check_mode: false

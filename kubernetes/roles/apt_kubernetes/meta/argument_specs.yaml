@@ -1,0 +1,85 @@
+# SPDX-License-Identifier: AGPL-3.0
+---
+argument_specs:
+  main:
+    short_description: Configure the Kubernetes APT repository
+    description: |
+      Adds the official Kubernetes APT repo (pkgs.k8s.io) via
+      ansible.builtin.deb822_repository and runs apt-get update. Other
+      roles that need packages from this repo should declare it as a
+      dependency.
+
+      Upstream publishes one repo per Kubernetes minor version, pick it
+      with apt_kubernetes.ver.
+
+      Installs python3-debian, which deb822_repository needs, and,
+      unless apt_kubernetes.validate_signed_by is false, sq, which lints
+      apt_kubernetes.signed_by.
+    author: Lee Garrett
+    options:
+      apt_kubernetes:
+        type: dict
+        required: false
+        description: Kubernetes APT repository configuration
+        options:
+          ver:
+            type: str
+            required: false
+            default: "1.37"
+            description: >
+              Kubernetes minor version to use for the repository URL,
+              e.g. "1.36" resolves to
+              https://pkgs.k8s.io/core:/stable:/v1.36/deb/.
+          name:
+            type: str
+            required: false
+            default: kubernetes
+            description: >
+              Name of the repo, decides the file name below
+              /etc/apt/sources.list.d/.
+          uris:
+            type: list
+            elements: str
+            required: false
+            description: >
+              URIs of the repo, defaults to the upstream repo for
+              apt_kubernetes.ver.
+          types:
+            type: list
+            elements: str
+            required: false
+            choices:
+              - deb
+              - deb-src
+            description: Types of the repo, "deb" and/or "deb-src".
+          suites:
+            type: list
+            elements: str
+            required: false
+            description: >
+              Suites to pull packages for, "/" for the flat repo upstream
+              publishes.
+          components:
+            type: list
+            elements: str
+            required: false
+            description: >
+              Components to enable, empty for a flat repo.
+          enabled:
+            type: bool
+            required: false
+            default: true
+            description: Whether apt uses the repo.
+          signed_by:
+            type: str
+            required: false
+            description: >
+              ASCII armored OpenPGP public key the repo is signed with.
+          validate_signed_by:
+            type: bool
+            required: false
+            default: true
+            description: >
+              Lint apt_kubernetes.signed_by with "sq cert lint" before
+              adding the repo, apt only reports a vague parse error on a
+              mangled key. Installs sq on the target.

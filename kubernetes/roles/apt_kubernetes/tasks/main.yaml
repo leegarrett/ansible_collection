@@ -1,0 +1,36 @@
+# SPDX-License-Identifier: AGPL-3.0
+---
+# roles requiring packages from this repo should depend on it
+- name: Validate apt_kubernetes.ver
+  ansible.builtin.assert:
+    that: apt_kubernetes.ver is match('^\d+\.\d+$')
+    fail_msg: >-
+      apt_kubernetes.ver must be a minor version string like '1.36',
+      got: "{{ apt_kubernetes.ver }}"
+
+# deb822_repository needs python3-debian on the target, also in check mode
+- name: Install packages needed to manage the apt repo
+  become: true
+  ansible.builtin.apt:
+    name: python3-debian
+  check_mode: false
+
+# apt only reports a vague parse error on a mangled inline key
+- name: Validate apt_kubernetes.signed_by
+  ansible.builtin.include_tasks: validate_signed_by.yaml
+  when: apt_kubernetes.validate_signed_by
+
+- name: Add kubernetes apt repo
+  become: true
+  ansible.builtin.deb822_repository:
+    name: "{{ apt_kubernetes.name }}"
+    types: "{{ apt_kubernetes.types }}"
+    uris: "{{ apt_kubernetes.uris }}"
+    suites: "{{ apt_kubernetes.suites }}"
+    components: "{{ apt_kubernetes.components | default(omit, true) }}"
+    signed_by: "{{ apt_kubernetes.signed_by }}"
+    enabled: "{{ apt_kubernetes.enabled }}"
+  notify: Run apt update
+
+- name: Update apt repos
+  ansible.builtin.meta: flush_handlers
