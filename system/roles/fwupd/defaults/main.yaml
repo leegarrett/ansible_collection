@@ -1,0 +1,11 @@
+---
+fwupd:
+  conf:
+    fwupd:
+  packages:
+    Debian:
+      - fwupd
+      - fwupd-amd64-signed
+    Ubuntu:
+      - fwupd
+      - fwupd-signed

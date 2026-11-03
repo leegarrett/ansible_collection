@@ -1,0 +1,18 @@
+---
+- name: Install fwupd
+  become: true
+  ansible.builtin.apt:
+    name: "{{ fwupd.packages[ansible_facts.distribution] }}"
+  register: _fwupd_apt
+
+- name: Configure fwupd
+  become: true
+  ansible.builtin.template:
+    src: etc/fwupd/fwupd.conf.j2
+    dest: /etc/fwupd/fwupd.conf
+    owner: root
+    group: root
+    mode: '0640'
+  # /etc/fwupd doesn't exist yet in check mode on a fresh install
+  when: not (ansible_check_mode and _fwupd_apt is changed)
+  notify: Restart fwupd

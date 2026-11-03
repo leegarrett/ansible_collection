@@ -1,0 +1,33 @@
+---
+argument_specs:
+  main:
+    short_description: Install and configure fwupd
+    description: |
+      Installs the fwupd packages for the host's distribution, renders
+      fwupd.conf into /etc/fwupd/fwupd.conf and restarts fwupd.service on
+      changes.
+    author: Lee Garrett
+    options:
+      fwupd:
+        type: dict
+        description: fwupd settings.
+        options:
+          conf:
+            type: dict
+            default: {}
+            description: >
+              fwupd.conf as a dict of INI sections, each a dict of parameters,
+              e.g. fwupd.conf.fwupd.UpdateMotd. Values are written verbatim.
+              See fwupd.conf(5).
+          packages:
+            type: dict
+            default:
+              Debian:
+                - fwupd
+                - fwupd-amd64-signed
+              Ubuntu:
+                - fwupd
+                - fwupd-signed
+            description: >
+              Lists of packages to install, keyed by
+              ansible_facts.distribution.

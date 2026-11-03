@@ -1,0 +1,11 @@
+#jinja2:lstrip_blocks: True
+# {{ ansible_managed }}
+{# fwupd fails to load a keyless group with a comment above it #}
+{# https://github.com/fwupd/fwupd/issues/10656 #}
+{% for section, params in fwupd.conf.items() if params %}
+
+[{{ section }}]
+{% for key, value in params.items() %}
+{{ key }}={{ '' if value is none else value }}
+{% endfor %}
+{% endfor %}
