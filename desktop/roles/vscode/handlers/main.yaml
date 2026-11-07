@@ -1,0 +1,11 @@
+#SPDX-License-Identifier: APGL-3.0
+---
+- name: apt update
+  become: true
+  ansible.builtin.apt:
+    update_cache: true
+
+- name: Update desktop database
+  ansible.builtin.command:
+    cmd: update-desktop-database {{ ansible_facts['user_dir'] }}/.local/share/applications
+  changed_when: false
