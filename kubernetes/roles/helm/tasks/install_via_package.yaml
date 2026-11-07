@@ -1,0 +1,35 @@
+# SPDX-License-Identifier: AGPL-3.0
+---
+# deb822_repository needs python3-debian on the target
+- name: Install packages needed to manage the apt repo
+  become: true
+  ansible.builtin.apt:
+    name: python3-debian
+
+- name: Add helm apt repo
+  become: true
+  ansible.builtin.deb822_repository:
+    name: "{{ helm.apt_repo.name }}"
+    types: "{{ helm.apt_repo.types }}"
+    uris: "{{ helm.apt_repo.uris }}"
+    suites: "{{ helm.apt_repo.suites }}"
+    components: "{{ helm.apt_repo.components }}"
+    signed_by: "{{ helm.apt_repo.signed_by }}"
+    enabled: "{{ helm.apt_repo.enabled }}"
+  notify: Run apt update
+
+- name: Update apt repos
+  ansible.builtin.meta: flush_handlers
+
+- name: Install helm packages
+  become: true
+  ansible.builtin.apt:
+    name: "{{ helm.packages }}"
+
+# upgrades can break the version skew with the installed kubernetes
+- name: Hold helm packages
+  become: true
+  ansible.builtin.dpkg_selections:
+    name: "{{ item | split('=') | first }}"
+    selection: hold
+  loop: "{{ helm.packages }}"

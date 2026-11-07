@@ -1,0 +1,6 @@
+### Ansible managed! Any changes will be overwritten. ###
+
+which kubectl >/dev/null && source <(kubectl completion bash)
+which helm >/dev/null && source <(helm completion bash)
+which argo >/dev/null && source <(argo completion bash)
+which terraform >/dev/null && complete -C /usr/bin/terraform terraform

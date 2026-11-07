@@ -1,0 +1,8 @@
+---
+- name: Remove the kubectl package
+  become: true
+  ansible.builtin.apt:
+    name: kubectl
+    state: absent
+    allow_change_held_packages: true
+    autoremove: true

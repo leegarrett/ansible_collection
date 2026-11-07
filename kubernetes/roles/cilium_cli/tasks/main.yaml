@@ -1,0 +1,62 @@
+---
+- name: Check current cilium-cli version
+  ansible.builtin.command:
+    cmd: "{{ cilium_cli.install_dir }}/cilium version --client"
+  register: _cilium_version
+  failed_when: false
+  changed_when: false
+  check_mode: false
+
+- name: Report the cilium-cli install pending in check mode
+  ansible.builtin.debug:
+    msg: "cilium-cli v{{ cilium_cli.version }} would be installed"
+  changed_when: true
+  when:
+    - _cilium_install_needed | bool
+    - ansible_check_mode
+
+# check mode leaves the tarball empty, so it cannot be extracted
+- name: Install cilium-cli
+  when:
+    - _cilium_install_needed | bool
+    - not ansible_check_mode
+  block:
+    - name: Create temporary file for cilium-cli tarball
+      become: true
+      ansible.builtin.tempfile:
+        suffix: ".tar.gz"
+      register: _cilium_tempfile
+
+    - name: Download, extract, and clean up cilium-cli
+      block:
+        - name: Download cilium-cli tarball
+          become: true
+          ansible.builtin.get_url:
+            url: "{{ _cilium_tarball_url }}"
+            dest: "{{ _cilium_tempfile.path }}"
+            checksum: "sha256:{{ cilium_cli.checksum_sha256 }}"
+            owner: root
+            group: root
+            mode: '0644'
+
+        - name: Extract cilium-cli
+          become: true
+          ansible.builtin.unarchive:
+            src: "{{ _cilium_tempfile.path }}"
+            dest: "{{ cilium_cli.install_dir }}"
+            remote_src: true
+
+        - name: Set cilium binary ownership and permissions
+          become: true
+          ansible.builtin.file:
+            path: "{{ cilium_cli.install_dir }}/cilium"
+            owner: root
+            group: root
+            mode: '0755'
+
+      always:
+        - name: Remove cilium-cli tarball
+          become: true
+          ansible.builtin.file:
+            path: "{{ _cilium_tempfile.path }}"
+            state: absent

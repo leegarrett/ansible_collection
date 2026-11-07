@@ -1,0 +1,8 @@
+---
+# kube_user.controlplane and .client_name are required, so have no default.
+kube_user:
+  cluster_role: cluster-admin
+  validity_period: "720h"
+  # Reissue once the existing certificate expires within this window.
+  renew_before: "168h"
+  local_path: "~/.kube/config"

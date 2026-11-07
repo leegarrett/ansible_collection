@@ -1,0 +1,70 @@
+# SPDX-License-Identifier: AGPL-3.0
+---
+- name: Check the installed helmfile version
+  ansible.builtin.command: "{{ helmfile.bin_path }} --version"
+  register: _helmfile_installed
+  failed_when: false
+  changed_when: false
+  check_mode: false
+
+- name: Report the helmfile install pending in check mode
+  ansible.builtin.debug:
+    msg: "helmfile {{ helmfile.version }} would be installed"
+  changed_when: true
+  when:
+    - >-
+      _helmfile_installed.stdout | d('')
+      != 'helmfile version ' ~ helmfile.version
+    - ansible_check_mode
+
+# check mode creates neither the tempdir nor the tarball
+- name: Install helmfile {{ helmfile.version }}
+  when:
+    - >-
+      _helmfile_installed.stdout | d('')
+      != 'helmfile version ' ~ helmfile.version
+    - not ansible_check_mode
+  block:
+    - name: Create a temporary directory for the download
+      become: true
+      ansible.builtin.tempfile:
+        state: directory
+        suffix: helmfile
+      register: _helmfile_tmpdir
+
+    - name: Download, verify and install the release
+      block:
+        - name: Download the release tarball
+          become: true
+          ansible.builtin.get_url:
+            url: "{{ helmfile.tarball_url }}"
+            dest: "{{ _helmfile_tmpdir.path }}/{{ helmfile.tarball }}"
+            checksum: "sha256:{{ helmfile.checksums_sha256[helmfile.arch] }}"
+            owner: root
+            group: root
+            mode: '0644'
+
+        - name: Unpack the helmfile binary
+          become: true
+          ansible.builtin.unarchive:
+            src: "{{ _helmfile_tmpdir.path }}/{{ helmfile.tarball }}"
+            dest: "{{ _helmfile_tmpdir.path }}"
+            remote_src: true
+            include:
+              - helmfile
+
+        - name: Install the helmfile binary
+          become: true
+          ansible.builtin.copy:
+            src: "{{ _helmfile_tmpdir.path }}/helmfile"
+            dest: "{{ helmfile.bin_path }}"
+            remote_src: true
+            owner: root
+            group: root
+            mode: '0755'
+      always:
+        - name: Remove the temporary directory
+          become: true
+          ansible.builtin.file:
+            path: "{{ _helmfile_tmpdir.path }}"
+            state: absent

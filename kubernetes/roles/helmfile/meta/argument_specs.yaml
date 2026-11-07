@@ -1,0 +1,66 @@
+# SPDX-License-Identifier: AGPL-3.0
+---
+argument_specs:
+  main:
+    short_description: Install helmfile
+    description: |
+      Installs helmfile from the upstream release tarball at
+      https://github.com/helmfile/helmfile/releases to helmfile.bin_path.
+
+      The tarball is verified against helmfile.checksums_sha256. Upstream
+      publishes no signatures, so there is no signature check. Download
+      and unpacking happen in a temporary directory that is removed
+      afterwards.
+
+      The role is a no-op when the installed binary already reports
+      helmfile.version. In check mode it only reports whether an install
+      is pending. tasks/wipe.yaml removes the binary again.
+    author: Lee Garrett
+    options: &options
+      helmfile:
+        type: dict
+        required: false
+        description: helmfile role configuration
+        options:
+          version:
+            type: str
+            required: false
+            default: "1.7.4"
+            description: helmfile release to install, without the leading "v".
+          checksums_sha256:
+            type: dict
+            required: false
+            description: >
+              sha256sum of helmfile_<version>_linux_<arch>.tar.gz, keyed by
+              upstream architecture name, published in
+              helmfile_<version>_checksums.txt of each release.
+          bin_path:
+            type: path
+            required: false
+            default: /usr/local/bin/helmfile
+            description: Path to install the helmfile binary to.
+          arch_map:
+            type: dict
+            required: false
+            description: >
+              Maps the architecture fact of the target host to the
+              architecture name upstream uses in its release tarballs.
+          arch:
+            type: str
+            required: false
+            description: >
+              Upstream architecture name of the target host, derived from
+              arch_map.
+          tarball:
+            type: str
+            required: false
+            description: File name of the release tarball.
+          tarball_url:
+            type: str
+            required: false
+            description: Download URL of the release tarball.
+  wipe:
+    short_description: Remove helmfile
+    description: Removes the helmfile binary installed by the main entry point.
+    author: Lee Garrett
+    options: *options

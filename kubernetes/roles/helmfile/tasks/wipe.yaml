@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: AGPL-3.0
+---
+- name: Remove the helmfile binary
+  become: true
+  ansible.builtin.file:
+    path: "{{ helmfile.bin_path }}"
+    state: absent

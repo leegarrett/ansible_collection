@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: AGPL-3.0
+---
+helmfile:
+  # bump version and checksums together
+  version: "1.7.4"
+  checksums_sha256:
+    amd64: f96ef0a015df06b29d7f38bf0ca08821018ae25eb96bf2c7abd3affa1b84e112
+    arm64: 0292f57a4638a21e775b0ce8bde37ee3fdd65dbbdbe0e5b9a06718f1dd04c7fa
+  bin_path: /usr/local/bin/helmfile
+  arch_map:
+    x86_64: amd64
+    aarch64: arm64
+  arch: "{{ helmfile.arch_map[ansible_facts.architecture] }}"
+  tarball: "helmfile_{{ helmfile.version }}_linux_{{ helmfile.arch }}.tar.gz"
+  tarball_url: >-
+    https://github.com/helmfile/helmfile/releases/download/v{{
+    helmfile.version }}/{{ helmfile.tarball }}

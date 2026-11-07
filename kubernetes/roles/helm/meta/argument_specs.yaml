@@ -1,0 +1,121 @@
+# SPDX-License-Identifier: AGPL-3.0
+---
+argument_specs:
+  main:
+    short_description: Set up a machine for usage with helm
+    description: |
+      Installs helm either from the upstream release tarball
+      ("binary_download") or from the upstream apt repo ("package"), see
+      helm.install_method.
+
+      binary_download verifies the tarball against its sha256sum and its
+      detached OpenPGP signature, using the release signing key that ships
+      with this role (files/helm-signing-key.asc). Upstream signs each
+      release with the key of that release's manager, so the shipped key
+      only verifies the releases signed by it. Every release names its
+      signing key fingerprint in its release notes. Download, verification
+      and unpacking all happen in a temporary directory that is removed
+      afterwards, only the helm binary is installed to helm.bin_path.
+
+      package adds the upstream apt repo, installs helm.packages and puts
+      them on hold.
+
+      See https://helm.sh/docs/topics/version_skew/ to check which
+      kubernetes version is required.
+    author: Lee Garrett
+    options:
+      helm:
+        type: dict
+        required: false
+        description: helm role configuration
+        options:
+          install_method:
+            type: str
+            required: false
+            default: binary_download
+            choices:
+              - binary_download
+              - package
+            description: >
+              Where to get helm from, the upstream release tarball
+              ("binary_download") or the upstream apt repo ("package").
+          version:
+            type: str
+            required: false
+            default: "4.2.4"
+            description: >
+              binary_download only: helm release to install, without the
+              leading "v".
+          checksum_sha256:
+            type: str
+            required: false
+            description: >
+              binary_download only: sha256sum of
+              helm-v<version>-linux-<arch>.tar.gz for the architecture of
+              the target host, published in the release notes at
+              https://github.com/helm/helm/releases.
+          bin_path:
+            type: path
+            required: false
+            default: /usr/local/bin/helm
+            description: >
+              binary_download only: path to install the helm binary to.
+          arch_map:
+            type: dict
+            required: false
+            description: >
+              binary_download only: maps the architecture fact of the
+              target host to the architecture name upstream uses in its
+              release tarballs.
+          packages:
+            type: list
+            elements: str
+            required: false
+            description: >
+              package only: helm apt packages to install and hold.
+          apt_repo:
+            type: dict
+            required: false
+            description: >
+              package only: the upstream helm apt repo, passed to
+              ansible.builtin.deb822_repository.
+            options:
+              name:
+                type: str
+                required: false
+                default: helm
+                description: >
+                  Name of the repo, decides the file name below
+                  /etc/apt/sources.list.d/.
+              types:
+                type: list
+                elements: str
+                required: false
+                description: Types of the repo, "deb" and/or "deb-src".
+              uris:
+                type: list
+                elements: str
+                required: false
+                description: URIs of the repo.
+              suites:
+                type: list
+                elements: str
+                required: false
+                description: Suites to pull packages for.
+              components:
+                type: list
+                elements: str
+                required: false
+                description: Components to enable.
+              enabled:
+                type: bool
+                required: false
+                default: true
+                description: Whether apt uses the repo.
+              signed_by:
+                type: str
+                required: false
+                description: >
+                  ASCII armored OpenPGP public key the repo is signed
+                  with. This is the repo key, not the release signing key
+                  used by the binary_download method.

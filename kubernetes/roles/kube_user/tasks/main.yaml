@@ -1,0 +1,103 @@
+---
+# The certificate only authenticates, RBAC is what makes the user an admin.
+- name: Bind the user to {{ kube_user.cluster_role }}
+  delegate_to: "{{ kube_user.controlplane }}"
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: rbac.authorization.k8s.io/v1
+      kind: ClusterRoleBinding
+      metadata:
+        name: "{{ kube_user.client_name }}-{{ kube_user.cluster_role }}"
+      roleRef:
+        apiGroup: rbac.authorization.k8s.io
+        kind: ClusterRole
+        name: "{{ kube_user.cluster_role }}"
+      subjects:
+        - apiGroup: rbac.authorization.k8s.io
+          kind: User
+          name: "{{ kube_user.client_name }}"
+
+- name: Check for an existing kubeconfig
+  become: false
+  ansible.builtin.stat:
+    path: "{{ kube_user.local_path }}"
+  register: _kube_user_stat
+
+- name: Read the existing kubeconfig
+  become: false
+  # The kubeconfig holds the client's private key.
+  no_log: true
+  ansible.builtin.slurp:
+    src: "{{ kube_user.local_path }}"
+  register: _kube_user_slurp
+  when: _kube_user_stat.stat.exists
+
+- name: Extract the client certificate of the existing kubeconfig
+  vars:
+    _config: >-
+      {{ _kube_user_slurp.content | d('') | b64decode
+         | from_yaml | d({}, true) }}
+  ansible.builtin.set_fact:
+    _kube_user_cert: >-
+      {{ _config.users | d([]) | map(attribute='user')
+         | map(attribute='client-certificate-data') | first | d('')
+         | b64decode }}
+
+# Parsing needs no target state, so it keeps cryptography off the nodes.
+- name: Read the expiry of the existing client certificate
+  delegate_to: localhost
+  become: false
+  community.crypto.x509_certificate_info:
+    content: "{{ _kube_user_cert }}"
+  register: _kube_user_cert_info
+  when: _kube_user_cert is truthy
+
+# Every kubeadm run mints a fresh certificate, so only renew a stale one.
+- name: Decide whether to issue a new certificate
+  vars:
+    # not_after is an ASN.1 timestamp, so it sorts lexicographically.
+    _renew_after: >-
+      {{ '%Y%m%d%H%M%SZ' | strftime(now(utc=true).timestamp() | int
+         + (kube_user.renew_before | community.general.to_seconds | int),
+         utc=true) }}
+  ansible.builtin.set_fact:
+    _kube_user_renew: >-
+      {{ _kube_user_cert is not truthy
+         or _kube_user_cert_info.not_after < _renew_after }}
+
+- name: Generate a kubeconfig for {{ kube_user.client_name }}
+  delegate_to: "{{ kube_user.controlplane }}"
+  become: true
+  # Only reads the cluster CA and prints to stdout, so it is --check safe.
+  check_mode: false
+  changed_when: false
+  # stdout holds the client's private key.
+  no_log: true
+  ansible.builtin.command:
+    argv:
+      - kubeadm
+      - kubeconfig
+      - user
+      - --client-name={{ kube_user.client_name }}
+      - --validity-period={{ kube_user.validity_period }}
+      - --config=/etc/kubernetes/kubeadm-config.yaml
+  register: _kube_user_kubeconfig
+  when: _kube_user_renew | bool
+
+- name: Create the kubeconfig directory
+  become: false
+  ansible.builtin.file:
+    state: directory
+    path: "{{ kube_user.local_path | dirname }}"
+    mode: '0700'
+
+- name: Write the kubeconfig to {{ kube_user.local_path }}
+  become: false
+  # The kubeconfig holds the client's private key.
+  no_log: true
+  ansible.builtin.copy:
+    content: "{{ _kube_user_kubeconfig.stdout }}\n"
+    dest: "{{ kube_user.local_path }}"
+    mode: '0600'
+  when: _kube_user_renew | bool

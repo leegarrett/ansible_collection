@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: AGPL-3.0
+---
+argument_specs:
+  main:
+    short_description: Install kubectl
+    description: |
+      Installs the kubectl package and bash-completion on a Debian host. The
+      role has no variables.
+    author: Lee Garrett
+    options: {}

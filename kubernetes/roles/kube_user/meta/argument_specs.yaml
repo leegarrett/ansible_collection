@@ -1,0 +1,72 @@
+# SPDX-License-Identifier: AGPL-3.0
+---
+argument_specs:
+  main:
+    short_description: Issue an admin kubeconfig for a Kubernetes user
+    description: |
+      Runs "kubeadm kubeconfig user" on kube_user.controlplane to mint a
+      client certificate for kube_user.client_name, binds that name to a
+      ClusterRole, and writes kubeadm's output verbatim to every host the
+      role runs on.
+
+      The cluster-side tasks are delegated to the control plane, so the role
+      can be applied to any host, including one outside the cluster. The
+      kubeconfig itself is written on the target, as the connecting user.
+
+      Nothing is regenerated while the certificate in the target's existing
+      kubeconfig is still valid for longer than kube_user.renew_before.
+    author: Lee Garrett
+    options:
+      kube_user:
+        type: dict
+        required: true
+        description: kube_user role configuration
+        options:
+          controlplane:
+            type: str
+            required: true
+            description: >
+              Inventory hostname of the control-plane node to mint the
+              certificate on, i.e. the host holding the cluster CA and the
+              kubeadm config. Usually the same value as
+              kubernetes.controlplane, but named separately so the role can
+              run against a host that has no kubernetes settings of its own.
+          client_name:
+            type: str
+            required: true
+            description: >
+              Name of the user. Becomes the CN of the client certificate,
+              the RBAC user the ClusterRoleBinding names, and the user and
+              context entries in the kubeconfig.
+          cluster_role:
+            type: str
+            default: cluster-admin
+            description: >
+              ClusterRole to bind client_name to. The binding is named
+              "<client_name>-<cluster_role>". The certificate alone grants
+              nothing, so without this the kubeconfig authenticates but is
+              not authorized for anything.
+          validity_period:
+            type: str
+            default: "720h"
+            description: >
+              Lifetime of the issued client certificate, passed to kubeadm as
+              "--validity-period". A Go duration, so hours are the largest
+              unit. Cannot exceed the remaining lifetime of the cluster CA.
+          renew_before:
+            type: str
+            default: "168h"
+            description: >
+              Reissue once the certificate in the target's existing
+              kubeconfig expires within this window. Parsed by
+              community.general.to_seconds, so units up to "y" are accepted.
+              Keeps the role idempotent between renewals, since every kubeadm
+              run mints a fresh certificate.
+          local_path:
+            type: path
+            default: "~/.kube/config"
+            description: >
+              Where to write the kubeconfig on each host the role runs on,
+              as the connecting user. Also the file the expiry check reads,
+              so pointing two invocations at the same path makes them
+              overwrite each other.

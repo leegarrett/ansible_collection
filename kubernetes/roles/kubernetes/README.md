@@ -236,8 +236,7 @@ whole group in `group_vars/`, with the remaining keys left at their defaults.
 
 [tasks/wipe.yaml](tasks/wipe.yaml) tears a host back down: it runs
 `kubeadm reset -f`, removes the Kubernetes packages and `containerd`,
-deletes every file the role's templates created plus
-`/etc/systemd/system/kubelet.service.d/`, drops the endpoint block from
+deletes every file the role's templates created, drops the endpoint block from
 `/etc/hosts`, and wipes `/var/lib/containerd`, `/etc/cni/`, the pod logs and
 the user's `~/.kube/`. It is not part of `main.yaml`; include it explicitly
 from a dedicated playbook when you want to reset a node.

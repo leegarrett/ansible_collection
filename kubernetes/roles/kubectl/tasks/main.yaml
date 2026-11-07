@@ -1,0 +1,8 @@
+---
+
+- name: Install packages for kubectl
+  become: true
+  apt:
+    name:
+      - bash-completion
+      - kubectl

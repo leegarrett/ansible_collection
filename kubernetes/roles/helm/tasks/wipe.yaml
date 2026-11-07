@@ -1,0 +1,29 @@
+# SPDX-License-Identifier: AGPL-3.0
+---
+# tasks to undo tasks/main.yaml for both install methods. sqv and
+# python3-debian are left in place, they are not helm-specific.
+
+- name: Remove the helm binary
+  become: true
+  ansible.builtin.file:
+    state: absent
+    path: "{{ helm.bin_path }}"
+
+- name: Remove the helm packages
+  become: true
+  ansible.builtin.apt:
+    name: "{{ helm.packages | map('split', '=') | map('first') }}"
+    state: absent
+    purge: true
+    allow_change_held_packages: true
+    autoremove: true
+
+- name: Remove the helm apt repo
+  become: true
+  ansible.builtin.deb822_repository:
+    name: "{{ helm.apt_repo.name }}"
+    state: absent
+  notify: Run apt update
+
+- name: Update apt repos
+  ansible.builtin.meta: flush_handlers

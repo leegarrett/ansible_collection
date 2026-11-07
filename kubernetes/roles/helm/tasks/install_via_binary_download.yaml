@@ -1,0 +1,105 @@
+# SPDX-License-Identifier: AGPL-3.0
+---
+- name: Install packages needed to verify the release signature
+  become: true
+  ansible.builtin.apt:
+    name: sqv
+
+- name: Check the installed helm version
+  ansible.builtin.command: "{{ helm.bin_path }} version --short"
+  register: _helm_installed
+  failed_when: false
+  changed_when: false
+  check_mode: false
+
+- name: Report the helm install pending in check mode
+  ansible.builtin.debug:
+    msg: "helm v{{ helm.version }} would be installed"
+  changed_when: true
+  when:
+    - _helm_install_needed | bool
+    - ansible_check_mode
+
+# check mode creates neither the tempdir nor the tarball, so nothing
+# below it can be copied, verified or unpacked
+- name: Install helm {{ helm.version }}
+  when:
+    - _helm_install_needed | bool
+    - not ansible_check_mode
+  block:
+    - name: Create a temporary directory for the download
+      become: true
+      ansible.builtin.tempfile:
+        state: directory
+        suffix: helm
+      register: _helm_tmpdir
+
+    - name: Download, verify and install the release
+      block:
+        - name: Copy the release signing key
+          become: true
+          ansible.builtin.copy:
+            src: helm-signing-key.asc
+            dest: "{{ _helm_tmpdir.path }}/helm-signing-key.asc"
+            owner: root
+            group: root
+            mode: '0644'
+
+        - name: Download the release tarball
+          become: true
+          ansible.builtin.get_url:
+            url: "{{ _helm_tarball_url }}"
+            dest: "{{ _helm_tmpdir.path }}/{{ _helm_tarball }}"
+            checksum: "sha256:{{ helm.checksum_sha256 }}"
+            owner: root
+            group: root
+            mode: '0644'
+
+        - name: Download the detached signature
+          become: true
+          ansible.builtin.get_url:
+            url: "{{ _helm_signature_url }}"
+            dest: "{{ _helm_tmpdir.path }}/{{ _helm_tarball }}.asc"
+            owner: root
+            group: root
+            mode: '0644'
+
+        # no module verifies OpenPGP signatures
+        - name: Verify the release signature
+          become: true
+          ansible.builtin.command:
+            argv:
+              - sqv
+              - --keyring
+              - "{{ _helm_tmpdir.path }}/helm-signing-key.asc"
+              - --signature-file
+              - "{{ _helm_tmpdir.path }}/{{ _helm_tarball }}.asc"
+              - "{{ _helm_tmpdir.path }}/{{ _helm_tarball }}"
+          changed_when: false
+
+        - name: Unpack the helm binary
+          become: true
+          ansible.builtin.unarchive:
+            src: "{{ _helm_tmpdir.path }}/{{ _helm_tarball }}"
+            dest: "{{ _helm_tmpdir.path }}"
+            remote_src: true
+            include:
+              - "linux-{{ _helm_arch }}/helm"
+            extra_opts:
+              - --strip-components=1
+
+        - name: Install the helm binary
+          become: true
+          ansible.builtin.copy:
+            src: "{{ _helm_tmpdir.path }}/helm"
+            dest: "{{ helm.bin_path }}"
+            remote_src: true
+            owner: root
+            group: root
+            mode: '0755'
+      always:
+        - name: Remove the temporary directory
+          become: true
+          ansible.builtin.file:
+            path: "{{ _helm_tmpdir.path }}"
+            state: absent

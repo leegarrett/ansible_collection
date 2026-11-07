@@ -1,0 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0
+---
+- name: Install helm
+  ansible.builtin.include_tasks: "install_via_{{ helm.install_method }}.yaml"

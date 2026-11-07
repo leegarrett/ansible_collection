@@ -1,0 +1,44 @@
+# SPDX-License-Identifier: AGPL-3.0
+---
+argument_specs:
+  main:
+    short_description: Install the cilium CLI
+    description: |
+      Installs the cilium CLI (the "cilium" binary used to install, inspect
+      and troubleshoot Cilium in a cluster) from the upstream release
+      tarball at https://github.com/cilium/cilium-cli/releases.
+
+      The tarball is verified against cilium_cli.checksum_sha256, which is
+      architecture specific, so bump version and checksum together and take
+      the checksum for the architecture of the target hosts. It is
+      downloaded to a temporary file that is removed afterwards, only the
+      cilium binary is installed to cilium_cli.install_dir.
+
+      The role is a no-op when the installed binary already reports
+      cilium_cli.version. In check mode it only reports whether an install
+      is pending.
+    author: Lee Garrett
+    options:
+      cilium_cli:
+        type: dict
+        required: false
+        description: cilium_cli role configuration
+        options:
+          version:
+            type: str
+            required: false
+            default: "0.19.4"
+            description: >
+              cilium-cli release to install, without the leading "v".
+          install_dir:
+            type: path
+            required: false
+            default: /usr/local/bin
+            description: Directory to install the cilium binary into.
+          checksum_sha256:
+            type: str
+            required: false
+            description: >
+              sha256sum of cilium-linux-<arch>.tar.gz for the architecture
+              of the target host, published in the release notes at
+              https://github.com/cilium/cilium-cli/releases.
