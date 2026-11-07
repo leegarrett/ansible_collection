@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+---
+namespace: leegarrett
+name: desktop
+version: 0.1.0
+readme: README.md
+authors:
+  - Lee Garrett <lgarrett@rocketjump.eu>
+description: Collection of roles for Linux desktop machines
+license:
+  - AGPL-3.0-or-later
+tags:
+  - desktop
+repository: https://github.com/leegarrett/ansible_collection/
+issues: https://github.com/leegarrett/ansible_collection/issues
