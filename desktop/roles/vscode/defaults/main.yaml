@@ -45,3 +45,6 @@ vscode:
     workbench.enableExperiments: false
     workbench.settings.enableNaturalLanguageSearch: false
   ssh_agent_forwarding: false
+
+_vscode:
+  desktop_entry_path: /usr/share/applications/com.microsoft.VSCode.desktop

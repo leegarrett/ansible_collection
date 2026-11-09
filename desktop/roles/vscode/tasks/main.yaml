@@ -81,7 +81,7 @@
 
 - name: Check for the system Visual Studio Code desktop entry
   ansible.builtin.stat:
-    path: /usr/share/applications/code.desktop
+    path: "{{ _vscode.desktop_entry_path }}"
   register: _vscode_system_desktop
 
 - name: Override the Visual Studio Code desktop entry to drop the SSH agent
@@ -91,7 +91,7 @@
   block:
     - name: Read the system Visual Studio Code desktop entry
       ansible.builtin.slurp:
-        src: /usr/share/applications/code.desktop
+        src: "{{ _vscode.desktop_entry_path }}"
       register: _vscode_system_desktop_entry
 
     - name: Write the Visual Studio Code desktop entry override
@@ -101,13 +101,13 @@
              | ansible.builtin.regex_replace('^Exec=/usr/share/code/code',
                                              'Exec=env -u SSH_AUTH_SOCK /usr/share/code/code',
                                              multiline=true) }}
-        dest: "{{ ansible_facts['user_dir'] }}/.local/share/applications/code.desktop"
+        dest: "{{ ansible_facts['user_dir'] }}/.local/share/applications/com.microsoft.VSCode.desktop"
         mode: '0644'
       notify: Update desktop database
 
 - name: Drop the Visual Studio Code desktop entry override
   ansible.builtin.file:
-    path: "{{ ansible_facts['user_dir'] }}/.local/share/applications/code.desktop"
+    path: "{{ ansible_facts['user_dir'] }}/.local/share/applications/com.microsoft.VSCode.desktop"
     state: absent
   when: vscode.ssh_agent_forwarding
   notify: Update desktop database
