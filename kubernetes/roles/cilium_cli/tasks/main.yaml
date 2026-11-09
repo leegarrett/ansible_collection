@@ -12,13 +12,13 @@
     msg: "cilium-cli v{{ cilium_cli.version }} would be installed"
   changed_when: true
   when:
-    - _cilium_install_needed | bool
+    - _cilium.install_needed | bool
     - ansible_check_mode
 
 # check mode leaves the tarball empty, so it cannot be extracted
 - name: Install cilium-cli
   when:
-    - _cilium_install_needed | bool
+    - _cilium.install_needed | bool
     - not ansible_check_mode
   block:
     - name: Create temporary file for cilium-cli tarball
@@ -32,7 +32,7 @@
         - name: Download cilium-cli tarball
           become: true
           ansible.builtin.get_url:
-            url: "{{ _cilium_tarball_url }}"
+            url: "{{ _cilium.tarball_url }}"
             dest: "{{ _cilium_tempfile.path }}"
             checksum: "sha256:{{ cilium_cli.checksum_sha256 }}"
             owner: root

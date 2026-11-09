@@ -6,14 +6,15 @@ cilium_cli:
   checksum_sha256: >-
     94adc5c3be44d8240df91cec520536686f8a1eb29e5bc70c4c1c80137f00d764
 
-_cilium_arch_map:
-  x86_64: amd64
-  aarch64: arm64
-
-_cilium_arch: "{{ _cilium_arch_map[ansible_facts.architecture] }}"
-_cilium_tarball: "cilium-linux-{{ _cilium_arch }}.tar.gz"
-_cilium_releases_url: "https://github.com/cilium/cilium-cli/releases/download"
-_cilium_tarball_url: >-
-  {{ _cilium_releases_url }}/v{{ cilium_cli.version }}/{{ _cilium_tarball }}
-_cilium_install_needed: >-
-  {{ 'v' ~ cilium_cli.version not in (_cilium_version.stdout | default('')) }}
+# internal, not meant to be overridden
+_cilium:
+  arch_map:
+    x86_64: amd64
+    aarch64: arm64
+  arch: "{{ _cilium.arch_map[ansible_facts.architecture] }}"
+  tarball: "cilium-linux-{{ _cilium.arch }}.tar.gz"
+  releases_url: "https://github.com/cilium/cilium-cli/releases/download"
+  tarball_url: >-
+    {{ _cilium.releases_url }}/v{{ cilium_cli.version }}/{{ _cilium.tarball }}
+  install_needed: >-
+    {{ 'v' ~ cilium_cli.version not in (_cilium_version.stdout | default('')) }}
