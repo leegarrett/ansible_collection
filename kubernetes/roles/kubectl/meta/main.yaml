@@ -1,3 +1,3 @@
 ---
 dependencies:
-  - role: apt_kubernetes
+  - role: leegarrett.kubernetes.apt_kubernetes

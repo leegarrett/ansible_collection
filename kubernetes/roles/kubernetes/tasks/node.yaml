@@ -77,7 +77,7 @@
 # Setup ~/.kube/config for next task
 - name: Install kubectl
   ansible.builtin.include_role:
-    name: kubectl
+    name: leegarrett.kubernetes.kubectl
 
 - name: Install kube user config
   ansible.builtin.include_tasks: kube_access.yaml

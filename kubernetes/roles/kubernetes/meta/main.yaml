@@ -1,4 +1,4 @@
 ---
 dependencies:
-  - role: apt_kubernetes
-  - role: containerd
+  - role: leegarrett.kubernetes.apt_kubernetes
+  - role: leegarrett.kubernetes.containerd
