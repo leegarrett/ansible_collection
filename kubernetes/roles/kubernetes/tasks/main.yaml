@@ -104,6 +104,20 @@
           topology.kubernetes.io/zone: "{{ kubernetes.zone }}"
   when: kubernetes.zone | d('') is truthy
 
+# kubeadm sets it on control-plane nodes; Cilium's Node IPAM skips nodes
+# carrying it, which leaves the Gateway without addresses.
+- name: Remove the exclude-from-external-load-balancers label
+  delegate_to: "{{ kubernetes.controlplane }}"
+  kubernetes.core.k8s:
+    state: patched
+    api_version: v1
+    kind: Node
+    name: "{{ ansible_facts.hostname }}"
+    definition:
+      metadata:
+        labels:
+          node.kubernetes.io/exclude-from-external-load-balancers: null
+
 - name: Approve the kubelet serving certificates
   ansible.builtin.include_tasks: kubelet_serving_certs.yaml
   when: kubernetes.server_tls_bootstrap | bool

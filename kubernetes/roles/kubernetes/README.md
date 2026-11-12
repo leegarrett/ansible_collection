@@ -33,6 +33,9 @@ On each host the role:
   `kubeadm` applies, so ordinary workloads can be scheduled. Every host is a
   control plane, so without this the cluster would have nowhere to schedule
   pods.
+- removes the `node.kubernetes.io/exclude-from-external-load-balancers` label
+  that `kubeadm` sets on control-plane nodes, so LoadBalancer Services can use
+  them (Cilium's Node IPAM skips labelled nodes)
 - includes the [`kubectl`](../kubectl/) role, grants the connecting user
   read access to `/etc/kubernetes/admin.conf` via an ACL and symlinks
   `~/.kube/config` to it
