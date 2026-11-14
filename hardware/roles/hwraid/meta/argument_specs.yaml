@@ -1,0 +1,80 @@
+---
+argument_specs:
+  main:
+    short_description: Install RAID controller tools from hwraid.le-vert.net
+    description: |
+      Adds the hwraid.le-vert.net APT repo via
+      ansible.builtin.deb822_repository and installs the RAID controller
+      config tools.
+
+      Installs python3-debian, which deb822_repository needs, and,
+      unless hwraid.validate_signed_by is false, sq, which lints
+      hwraid.signed_by.
+    author: Lee Garrett
+    options:
+      hwraid:
+        type: dict
+        required: false
+        description: hwraid repository and package configuration
+        options:
+          name:
+            type: str
+            required: false
+            default: hwraid
+            description: >
+              Name of the repo, decides the file name below
+              /etc/apt/sources.list.d/.
+          types:
+            type: list
+            elements: str
+            required: false
+            choices:
+              - deb
+              - deb-src
+            description: Types of the repo, "deb" and/or "deb-src".
+          uris:
+            type: list
+            elements: str
+            required: false
+            description: URIs of the repo.
+          suites:
+            type: list
+            elements: str
+            required: false
+            description: >
+              Suites to pull packages for, defaults to the release
+              codename of the target.
+          components:
+            type: list
+            elements: str
+            required: false
+            description: Components to enable.
+          enabled:
+            type: bool
+            required: false
+            default: true
+            description: Whether apt uses the repo.
+          supported:
+            type: dict
+            required: false
+            description: >
+              Debian releases and the dpkg architectures upstream publishes
+              packages for. The role fails on any other release or
+              architecture.
+          packages:
+            type: list
+            elements: str
+            required: false
+            description: Packages to install.
+          signed_by:
+            type: str
+            required: false
+            description: >
+              ASCII armored OpenPGP public key the repo is signed with.
+          validate_signed_by:
+            type: bool
+            required: false
+            default: true
+            description: >
+              Lint hwraid.signed_by with "sq cert lint" before
+              adding the repo. Installs sq on the target.

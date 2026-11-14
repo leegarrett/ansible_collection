@@ -1,0 +1,80 @@
+---
+hwraid:
+  name: hwraid
+  types:
+    - deb
+  uris:
+    - https://hwraid.le-vert.net/debian
+  suites:
+    - "{{ ansible_facts.distribution_release }}"
+  components:
+    - main
+  enabled: true
+  # Debian release => dpkg architectures upstream publishes
+  supported:
+    squeeze: [i386, amd64]
+    wheezy: [i386, amd64]
+    jessie: [i386, amd64]
+    stretch: [i386, amd64, arm64]
+    buster: [i386, amd64, arm64]
+    bullseye: [i386, amd64, arm64]
+    bookworm: [i386, amd64, arm64]
+    trixie: [i386, amd64, arm64]
+    sid: [i386, amd64]
+  # megactl comes from Debian main, hwraid.le-vert.net only has it up to buster
+  packages: []
+  validate_signed_by: true
+  # 9B241597ACC8C086A363535E43676E103A9A6F7C
+  signed_by: |
+    -----BEGIN PGP PUBLIC KEY BLOCK-----
+
+    mQINBGmAqiUBEACuo2fuMnD/1sBcciOlQJGw5BrKJF1Be9K3dXDWDGV5AhYq6e93
+    EdH4HPNksbeB3n3Yq71zSFUMHZr+2V8O3Ty4pT7mJ2hwSV5DWZrRacKWAgoeqMvd
+    8c6Wfck5t5mg1JQNKmOS/KiWGV+FPTb8CusgNzFCvCyCUNtkrWNbIwSJFrxWrrQv
+    SgezxtehMD3oi00QKaiSmVkMdEkjOEuputFUc/sfZzXzdgQXvtPoYVlf+V8OUpX6
+    +qnni0/t5lGIvwV+CXN2x8c+6NpxluLgfNihpk+P3xKpsOAChSco8ZUPfBoHKKHg
+    xtyZcEMHhh+K1UHlLmWon8o6/qbiUq//KVSdP+4uP7/zKkX5yHoT3LWqYFkLpqcw
+    Xgpt2dF+UtSWRQUrS9JTNaNfSduSDa7TxhOrOMrmmWtRAQmPCTqn4Yehl6v1fADB
+    wiWkdKMHa20SoduJwaFlLkzpb88DvtIfAI1JdKPIzwF5geKdL1aukLEyOdISPH+H
+    lblcBxZfQAXXF8amlgxhe1WNX+W/TmZ3nLPNcxfhZ5hI6174eozyrQBERDwN3joc
+    WglIwkZVuWbsVnIuxLeDzaDZiWg7Xl7KlSu54maz31SrV2Mk2XOYO3H/54ubm2sq
+    fgp2XjT/NNgD0zhoLwqVYS3FCibQfmILX8WabfehfmmNDAIG8clgYa6l9QARAQAB
+    tENIV1JhaWQgKGh0dHA6Ly9od3JhaWQubGUtdmVydC5uZXQpIC0gMjAyNiA8cm9v
+    dEBod3JhaWQubGUtdmVydC5uZXQ+iQJOBBMBCgA4FiEEmyQVl6zIwIajY1NeQ2du
+    EDqab3wFAmmAqiUCGwMFCwkIBwIGFQoJCAsCBBYCAwECHgECF4AACgkQQ2duEDqa
+    b3ylZQ//R147LnVOaE21V530BVXSdw4beyT27g6ZMJF/cz9TPSIB9ztqxClkwvbl
+    ZqT6hHj2Gm8B3ucl2aryo+RUN5ern0XcquxkFKGjdQFUZ/D59jriLiJFb+tq1WHC
+    N9H27CzIJ18htCjyQlnXKJ6JW4rVHhB4Q2lBKS3Qn8XebXbwY+h861evj5pDbvcN
+    pJXxZj1q+ma1OsiSur/KL9I03ESMjfnaG7Ste0eQjp+I2+fRpG8cL2W7B7lAABxj
+    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
+    =O4fb
+    -----END PGP PUBLIC KEY BLOCK-----

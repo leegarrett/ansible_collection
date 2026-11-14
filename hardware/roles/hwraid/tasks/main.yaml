@@ -1,0 +1,63 @@
+---
+- name: Get dpkg architecture
+  ansible.builtin.command:
+    cmd: dpkg --print-architecture
+  register: _hwraid_dpkg_arch
+  changed_when: false
+  check_mode: false
+
+- name: Validate release and architecture are supported by upstream
+  ansible.builtin.assert:
+    that:
+      - ansible_facts.distribution == 'Debian'
+      - ansible_facts.distribution_release in hwraid.supported
+      - >-
+        _hwraid_dpkg_arch.stdout
+        in hwraid.supported[ansible_facts.distribution_release]
+    fail_msg: >-
+      hwraid.le-vert.net has no packages for
+      {{ ansible_facts.distribution }}
+      {{ ansible_facts.distribution_release }}
+      {{ _hwraid_dpkg_arch.stdout }}
+
+# deb822_repository needs python3-debian on the target, also in check mode
+- name: Install packages needed to manage the apt repo
+  become: true
+  ansible.builtin.apt:
+    name: python3-debian
+  check_mode: false
+
+# apt only reports a vague parse error on a mangled inline key
+- name: Validate hwraid.signed_by
+  ansible.builtin.include_tasks: validate_signed_by.yaml
+  when: hwraid.validate_signed_by
+
+# left behind by the former apt_repository task
+- name: Remove legacy hwraid sources list
+  become: true
+  ansible.builtin.file:
+    path: /etc/apt/sources.list.d/hwraid_le_vert_net_debian.list
+    state: absent
+  notify: Run apt update
+
+- name: Add hwraid apt repo
+  become: true
+  ansible.builtin.deb822_repository:
+    name: "{{ hwraid.name }}"
+    types: "{{ hwraid.types }}"
+    uris: "{{ hwraid.uris }}"
+    suites: "{{ hwraid.suites }}"
+    components: "{{ hwraid.components }}"
+    signed_by: "{{ hwraid.signed_by }}"
+    enabled: "{{ hwraid.enabled }}"
+  notify: Run apt update
+
+- name: Update apt repos
+  ansible.builtin.meta: flush_handlers
+
+- name: Install RAID controller config tools
+  become: true
+  ansible.builtin.apt:
+    name: "{{ hwraid.packages }}"
+  # the repo is not really added in check mode
+  ignore_errors: "{{ ansible_check_mode }}"
