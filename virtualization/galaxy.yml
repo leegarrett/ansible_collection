@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+---
+namespace: leegarrett
+name: virtualization
+version: 0.1.0
+readme: README.md
+authors:
+  - Lee Garrett <lgarrett@rocketjump.eu>
+description: Collection of virtualization and container roles on Linux
+license:
+  - AGPL-3.0-or-later
+tags:
+  - virtualization
+  - docker
+  - qemu
+repository: https://github.com/leegarrett/ansible_collection/
+issues: https://github.com/leegarrett/ansible_collection/issues
