@@ -1,0 +1,116 @@
+# SPDX-License-Identifier: MIT-0
+---
+- name: Check the distribution release is supported
+  ansible.builtin.assert:
+    that:
+      - ansible_facts.distribution_release in __firewalld.release_defaults
+    fail_msg: >-
+      firewalld has no settings for {{ ansible_facts.distribution_release }}.
+      Add them under __firewalld.release_defaults, which currently covers
+      {{ __firewalld.release_defaults.keys() | join(', ') }}.
+    quiet: true
+
+- name: Install firewalld
+  become: true
+  ansible.builtin.apt:
+    name:
+      - firewalld
+      - nftables
+      - python3-dbus
+      - python3-firewall
+
+- name: Merge the release-specific firewalld.conf settings
+  ansible.builtin.set_fact:
+    firewalld: >-
+      {{ firewalld | combine({'conf':
+      __firewalld.release_defaults[ansible_facts.distribution_release]
+      | combine(firewalld.conf, recursive=true)}, recursive=true) }}
+
+- name: Warn when no firewalld configuration tree was found
+  ansible.builtin.debug:
+    msg: >-
+      No firewalld configuration tree found, so only firewalld.conf is
+      managed. Searched {{ firewalld.config_trees | join(', ') }}.
+  when: query('community.general.filetree', *firewalld.config_trees)
+    | length == 0
+
+- name: Create the firewalld configuration directories
+  become: true
+  ansible.builtin.file:
+    path: "/etc/firewalld/{{ item.path }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0750"
+  loop: "{{ query('community.general.filetree', *firewalld.config_trees)
+    | selectattr('state', 'eq', 'directory') }}"
+  loop_control:
+    label: "/etc/firewalld/{{ item.path }}"
+
+- name: Template the firewalld zones, services and policies
+  become: true
+  ansible.builtin.template:
+    src: "{{ item.src }}"
+    dest: "/etc/firewalld/{{ item.path | regex_replace('\\.j2$', '') }}"
+    owner: root
+    group: root
+    mode: "0644"
+  loop: "{{ query('community.general.filetree', *firewalld.config_trees)
+    | selectattr('state', 'eq', 'file') }}"
+  loop_control:
+    label: "/etc/firewalld/{{ item.path | regex_replace('\\.j2$', '') }}"
+  notify: Reload firewalld
+
+- name: Configure firewalld
+  become: true
+  ansible.builtin.template:
+    src: etc/firewalld/firewalld.conf.j2
+    dest: /etc/firewalld/firewalld.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Reload firewalld
+
+- name: Check for cloud-init
+  ansible.builtin.stat:
+    path: /usr/bin/cloud-init
+  register: _firewalld_cloud_init
+
+- name: Disable cloud-init, it deadlocks boot with firewalld enabled
+  when: _firewalld_cloud_init.stat.exists
+  block:
+    - name: Disable cloud-init
+      become: true
+      ansible.builtin.copy:
+        content: ""
+        dest: /etc/cloud/cloud-init.disabled
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Warn that cloud-init is disabled
+      ansible.builtin.debug:
+        msg: |
+          ###########################################################
+          #  cloud-init is DISABLED on {{ inventory_hostname }}
+          ###########################################################
+          On Debian/Ubuntu cloud-init-network.service runs before
+          sysinit.target and waits for the network, which is ordered
+          after firewalld, which needs dbus, which starts after
+          sysinit.target: boot deadlocks.
+          Lost: growpart/resizefs after a disk resize, hostname
+          updates from the provider console.
+          Remove /etc/cloud/cloud-init.disabled before taking a
+          snapshot to clone this host.
+          See https://github.com/canonical/cloud-init/issues/6502
+
+- name: Enable and start firewalld
+  become: true
+  ansible.builtin.service:
+    enabled: true
+    masked: false
+    name: firewalld
+    state: started
+
+- name: Flush handlers
+  ansible.builtin.meta: flush_handlers

@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: MIT-0
+---
+
+- name: Reload firewalld
+  become: true
+  ansible.builtin.service:
+    name: firewalld
+    state: reloaded
+  when: not ansible_check_mode

@@ -1,0 +1,35 @@
+# SPDX-License-Identifier: MIT-0
+---
+argument_specs:
+  main:
+    short_description: Install and configure firewalld
+    description: >
+      Installs firewalld, writes /etc/firewalld/firewalld.conf and templates
+      the ruleset from config_trees into /etc/firewalld. Disables cloud-init
+      if present, as it deadlocks boot with firewalld. Supports Debian
+      bookworm and trixie and Ubuntu 26.04 (resolute).
+    author:
+      - Lee Garrett
+    options:
+      firewalld:
+        description: firewalld configuration
+        type: dict
+        default: {}
+        options:
+          config_trees:
+            description: >
+              Trees mirroring /etc/firewalld that hold zones, services and
+              policies. Defaults to
+              target_templates/<target>/firewalld/etc/firewalld beside the
+              inventory directory, for the host, then each of its groups.
+              Missing trees are skipped. Files are templated, minus a trailing
+              .j2; the first tree wins per file.
+            type: list
+            elements: str
+          conf:
+            description: >
+              firewalld.conf(5) settings, merged over per-release defaults.
+              Booleans render as yes/no, other values verbatim. Only keys the
+              template knows are written.
+            type: dict
+            default: {}

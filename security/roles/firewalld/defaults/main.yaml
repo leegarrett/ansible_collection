@@ -1,0 +1,35 @@
+# SPDX-License-Identifier: MIT-0
+---
+firewalld:
+  # <inventory_dir>/../target_templates/<target>/firewalld/etc/firewalld
+  config_trees: >-
+    {{ ([inventory_hostname] + group_names)
+    | map('regex_replace', '^',
+    (inventory_dir | default('', true) | dirname) ~ '/target_templates/')
+    | map('regex_replace', '$', '/firewalld/etc/firewalld')
+    | list }}
+  conf:
+    DefaultZone: public
+    CleanupOnExit: true
+    CleanupModulesOnExit: false
+    IndividualCalls: false
+    LogDenied: 'off'
+    FirewallBackend: nftables
+    FlushAllOnReload: true
+    RFC3964_IPv4: true
+
+__firewalld:
+  # firewalld.conf defaults per release; the keys are the supported releases
+  release_defaults:
+    bookworm:
+      Lockdown: false
+      IPv6_rpfilter: true
+    # Ubuntu 26.04 (resolute) has the same firewalld.conf keys as trixie
+    trixie: &trixie
+      IPv6_rpfilter: strict
+      ReloadPolicy: "INPUT:DROP,FORWARD:DROP,OUTPUT:DROP"
+      StrictForwardPorts: false
+      NftablesFlowtable: "off"
+      NftablesCounters: false
+      NftablesTableOwner: true
+    resolute: *trixie
