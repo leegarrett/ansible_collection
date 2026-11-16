@@ -1,0 +1,35 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+---
+- name: Check architecture
+  ansible.builtin.assert:
+    that: ansible_facts.architecture == "x86_64"
+    fail_msg: "Unsupported architecture! Only x86_64 is supported."
+
+- name: Install sops
+  become: true
+  ansible.builtin.get_url:
+    url: "{{ _sops.binary_url }}"
+    dest: "{{ sops.install_dir }}/sops"
+    checksum: "sha256:{{ sops.sha256 }}"
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Verify the installed sops binary
+  ansible.builtin.command:
+    cmd: "{{ sops.install_dir }}/sops --version --check-for-updates=false"
+  register: _sops_version
+  changed_when: false
+  when: not ansible_check_mode
+
+- name: Assert the installed sops version
+  ansible.builtin.assert:
+    that:
+      - "'sops ' ~ sops.version in _sops_version.stdout"
+    fail_msg: >
+      expected sops {{ sops.version }}, got: {{ _sops_version.stdout }}
+  when: not ansible_check_mode
+
+- name: Install age
+  ansible.builtin.include_tasks: age.yaml
+  when: sops.use_age | bool

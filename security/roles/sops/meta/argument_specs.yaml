@@ -1,0 +1,48 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+---
+argument_specs:
+  main:
+    short_description: Install sops
+    description: |
+      Installs sops (Secrets OPerationS, the editor for files encrypted with
+      age, GPG, KMS and friends) from the upstream release binary at
+      https://github.com/getsops/sops/releases.
+
+      The binary is verified against sops.sha256, which is architecture
+      specific, so bump version and checksum together and take the checksum
+      for the architecture of the target hosts. It is installed as
+      sops.install_dir/sops and the installed binary is asked for its
+      version afterwards to confirm the install.
+
+      The role is a no-op when the installed binary already matches the
+      checksum.
+    author: Lee Garrett
+    options:
+      sops:
+        type: dict
+        description: sops role configuration
+        options:
+          config_dir:
+            type: path
+            default: "~/.config/sops"
+            description: Personal config directory of sops.
+          install_dir:
+            type: path
+            default: /usr/local/bin
+            description: Directory to install the sops binary into.
+          sha256:
+            type: str
+            description: >
+              sha256sum of sops-v<version>.linux.amd64 of the target host,
+              published in the release notes at
+              https://github.com/getsops/sops/releases.
+          use_age:
+            type: bool
+            default: true
+            description: >
+              Whether or not to install age, too.
+          version:
+            type: str
+            default: "3.13.3"
+            description: >
+              sops release to install, without the leading "v".

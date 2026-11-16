@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+---
+sops:
+  config_dir: "~/.config/sops"
+  install_dir: /usr/local/bin
+  # bump version and checksum together, the checksum is per architecture
+  sha256: e5bec3346a873ae91d871550f3e698c1aad962aff462a080e40f25fde17fef6b
+  use_age: true
+  version: "3.13.3"
+
+# internal, not meant to be overridden
+_sops:
+  binary: "sops-v{{ sops.version }}.linux.amd64"
+  releases_url: "https://github.com/getsops/sops/releases/download"
+  binary_url: >-
+    {{ _sops.releases_url }}/v{{ sops.version }}/{{ _sops.binary }}

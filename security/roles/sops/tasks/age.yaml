@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+---
+- name: Install age
+  become: true
+  ansible.builtin.apt:
+    name: age
+
+- name: Create age key dir
+  ansible.builtin.file:
+    path: "{{ sops.config_dir }}/age/"
+    mode: "0700"
+    state: directory
+
+- name: Create age key
+  ansible.builtin.command:
+    cmd: "age-keygen -o {{ sops.config_dir }}/age/keys.txt"
+    creates: "{{ sops.config_dir }}/age/keys.txt"
