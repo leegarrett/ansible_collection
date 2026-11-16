@@ -1,0 +1,27 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+---
+- name: Install caddy
+  become: true
+  ansible.builtin.apt:
+    name: caddy
+  register: _caddy_apt
+
+- name: Configure caddy
+  become: true
+  ansible.builtin.template:
+    src: etc/caddy/Caddyfile.j2
+    dest: /etc/caddy/Caddyfile
+    owner: root
+    group: root
+    mode: "0644"
+    validate: caddy validate --adapter caddyfile --config %s
+  notify: Reload caddy
+
+- name: Start and enable caddy
+  become: true
+  ansible.builtin.service:
+    name: caddy
+    state: started
+    enabled: true
+  # the unit doesn't exist yet when check mode skipped the install
+  when: not (ansible_check_mode and _caddy_apt is changed)

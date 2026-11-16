@@ -1,0 +1,45 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+---
+argument_specs:
+  main:
+    short_description: Install Caddy as a TLS-terminating reverse proxy
+    description: >
+      Installs Caddy from the distribution and configures one reverse proxy
+      site per entry in caddy.sites. Caddy obtains and renews certificates
+      for each site automatically via ACME (HTTP-01/TLS-ALPN-01), so ports
+      80 and 443 must be reachable from the internet.
+    options:
+      caddy:
+        description: caddy configuration
+        type: dict
+        default: {}
+        options:
+          acme_ca:
+            description: >
+              ACME directory URL, e.g.
+              https://acme-staging-v02.api.letsencrypt.org/directory for
+              testing. Unset uses Caddy's default issuers (Let's Encrypt,
+              falling back to ZeroSSL).
+            type: str
+          email:
+            description: >
+              Email address for the ACME account, used for expiry and
+              revocation notices.
+            type: str
+          sites:
+            description: Sites to serve.
+            type: list
+            elements: dict
+            default: []
+            options:
+              address:
+                description: >
+                  Site address, e.g. vpn.example.org. A public hostname
+                  enables automatic HTTPS for it.
+                type: str
+                required: true
+              upstream:
+                description: >
+                  Backend to proxy to, e.g. 127.0.0.1:8888.
+                type: str
+                required: true

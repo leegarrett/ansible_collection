@@ -1,0 +1,18 @@
+#jinja2:lstrip_blocks: True
+# {{ ansible_managed }}
+{% if caddy.email or caddy.acme_ca %}
+{
+	{% if caddy.email %}
+	email {{ caddy.email }}
+	{% endif %}
+	{% if caddy.acme_ca %}
+	acme_ca {{ caddy.acme_ca }}
+	{% endif %}
+}
+{% endif %}
+{% for site in caddy.sites %}
+
+{{ site.address }} {
+	reverse_proxy {{ site.upstream }}
+}
+{% endfor %}
