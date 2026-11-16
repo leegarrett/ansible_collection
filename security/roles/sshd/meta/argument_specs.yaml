@@ -1,0 +1,58 @@
+# SPDX-License-Identifier: MIT-0
+---
+argument_specs:
+  main:
+    short_description: Install and configure the OpenSSH server
+    description: >
+      Installs openssh-server, writes the directives under sshd.conf to
+      /etc/ssh/sshd_config.d/local.conf and, if sshd.host_key_types is set,
+      drops every host key whose type is not listed there and generates the
+      listed ones that are still missing. The shipped /etc/ssh/sshd_config is
+      left alone.
+    author:
+      - Lee Garrett
+    options:
+      sshd:
+        description: sshd configuration
+        type: dict
+        default: {}
+        options:
+          conf:
+            description: >
+              sshd_config(5) directives, written to
+              /etc/ssh/sshd_config.d/local.conf sorted by keyword. Keys are
+              emitted verbatim, so match the manpage capitalisation. Free-form
+              by design: declaring any suboption here would close the set and
+              reject every other keyword. sshd -t validates names and values.
+              bool renders as yes/no, null omits the line, a list repeats the
+              keyword once per element. Match is rejected: directives are
+              emitted sorted, so a Match block would swallow every directive
+              sorting after it. Ship those in their own drop-in.
+            type: dict
+            default: {}
+          host_key_types:
+            description: >
+              ssh-keygen(1) key types to keep in /etc/ssh. Every other
+              /etc/ssh/ssh_host_*_key and .pub is deleted, the listed ones are
+              generated if missing and emitted as sshd.conf.HostKey. Null or
+              empty leaves the host keys untouched and emits no HostKey.
+            type: list
+            elements: str
+          profiles:
+            description: >
+              Canned sets of settings to fold into the rest of sshd, applied in
+              the listed order. A profile carries the same keys as sshd itself,
+              so it can set conf directives and host_key_types alike. Precedence
+              runs from weakest to strongest: earlier profile, later profile,
+              then whatever sshd sets explicitly, which always wins. A null
+              sshd.conf or sshd.host_key_types counts as unset and lets the
+              profile supply the whole section, whereas nulling a single
+              directive under sshd.conf still beats the profile and omits the
+              line, which is how to drop a directive a profile sets and fall
+              back to the sshd default. Listing an unknown profile is an error.
+              Available
+              profiles are modern_crypto (ed25519 host keys only, no legacy
+              pubkey algorithms) and safe_auth (key-based login only, no root
+              login, no X11 forwarding).
+            type: list
+            elements: str

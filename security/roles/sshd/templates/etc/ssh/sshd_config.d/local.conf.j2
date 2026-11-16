@@ -1,0 +1,13 @@
+# {{ ansible_managed }}
+#
+{% for keyword, value in sshd.conf | default({}, true) | dictsort %}
+{% if value is not none %}
+{# A list renders as one directive line per element, for keywords that may be
+   repeated such as HostKey, ListenAddress or AcceptEnv. #}
+{% set values = value if value is sequence and value is not string
+                and value is not mapping else [value] %}
+{% for item in values %}
+{{ keyword }} {{ item | ternary('yes', 'no') if item is boolean else item }}
+{% endfor %}
+{% endif %}
+{% endfor %}

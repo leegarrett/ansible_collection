@@ -1,0 +1,29 @@
+# SPDX-License-Identifier: MIT-0
+---
+sshd:
+  # conf is {} because the argument spec types it as a dict and rejects null.
+  # host_key_types stays null on purpose: the profile fold drops null keys so a
+  # profile can supply them, whereas an empty list would override the profile.
+  conf: {}
+  host_key_types:
+  profiles:
+
+__sshd:
+  # A profile mirrors the layout of sshd itself, so the selected ones fold in
+  # with a plain recursive combine. Later entries of sshd.profiles win over
+  # earlier ones, and sshd wins over every profile.
+  profiles:
+    modern_crypto:
+      host_key_types:
+        - ed25519
+      conf:
+        # Drop legacy key types
+        PubkeyAcceptedAlgorithms: "-rsa-sha2-*,ssh-rsa*"
+    safe_auth:
+      conf:
+        PermitRootLogin: false
+        X11Forwarding: false
+        # Only allow key-based login
+        AuthenticationMethods: publickey
+        PasswordAuthentication: false
+        KbdInteractiveAuthentication: false

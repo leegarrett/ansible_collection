@@ -1,0 +1,25 @@
+# SPDX-License-Identifier: MIT-0
+---
+- name: Reject unknown sshd profiles
+  ansible.builtin.assert:
+    that:
+      - _sshd_unknown | length == 0
+    fail_msg: >-
+      sshd.profiles lists unknown profiles: {{ _sshd_unknown | join(', ') }}.
+      Available profiles: {{ __sshd.profiles | list | join(', ') }}.
+    quiet: true
+  vars:
+    _sshd_unknown: "{{ sshd.profiles | difference(__sshd.profiles | list) }}"
+
+# The rest of the role only knows sshd, so fold the selected profiles into it.
+# Keys that are null are dropped from sshd first, so that an unset sshd.conf or
+# sshd.host_key_types does not blank out what a profile provides. Whatever is
+# left of sshd is combined last and therefore wins.
+- name: Fold the selected profiles into the sshd configuration
+  ansible.builtin.set_fact:
+    sshd: "{{ (_sshd_selected + [_sshd_set]) | combine(recursive=true) }}"
+  vars:
+    _sshd_selected: "{{ sshd.profiles | map('extract', __sshd.profiles)
+                        | list }}"
+    _sshd_set: "{{ sshd | dict2items | rejectattr('value', 'none')
+                   | items2dict }}"

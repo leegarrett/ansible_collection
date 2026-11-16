@@ -1,0 +1,40 @@
+# SPDX-License-Identifier: MIT-0
+---
+- name: Find the existing ssh host keys
+  become: true
+  ansible.builtin.find:
+    paths: /etc/ssh
+    patterns: "ssh_host_*_key,ssh_host_*_key.pub"
+  register: _sshd_host_keys
+
+- name: Remove host keys of unwanted types
+  become: true
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop: "{{ _sshd_host_keys.files | map(attribute='path')
+            | reject('search', _sshd_wanted_keys) | list }}"
+  vars:
+    _sshd_wanted_keys: >-
+      /ssh_host_({{ sshd.host_key_types | join('|') }})_key(\.pub)?$
+  notify: Restart sshd
+
+# regenerate=never keeps existing keys as they are, but still rewrites a missing
+# or stale .pub from the private key.
+- name: Create missing ssh host keys
+  become: true
+  community.crypto.openssh_keypair:
+    path: "/etc/ssh/ssh_host_{{ item }}_key"
+    type: "{{ item }}"
+    regenerate: never
+  loop: "{{ sshd.host_key_types }}"
+  notify: Restart sshd
+
+# The template only knows sshd.conf, so fold the host keys into it.
+- name: Add the host keys to the sshd configuration
+  ansible.builtin.set_fact:
+    sshd: "{{ sshd | combine({'conf': {'HostKey': _sshd_host_key_paths}},
+                             recursive=true) }}"
+  vars:
+    _sshd_host_key_paths: "{{ sshd.host_key_types | map('regex_replace',
+                              '^(.*)$', '/etc/ssh/ssh_host_\\1_key') | list }}"

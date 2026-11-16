@@ -1,0 +1,73 @@
+# SPDX-License-Identifier: MIT-0
+---
+# Must run before the checks below, so they see the effective configuration.
+- name: Apply the selected sshd profiles
+  ansible.builtin.include_tasks: profiles.yaml
+  when: sshd.profiles | default([], true) | length > 0
+
+# Directives are emitted sorted, so everything sorting after a Match block would
+# silently become part of it.
+- name: Reject Match blocks in the sshd configuration
+  ansible.builtin.assert:
+    that:
+      - "'Match' not in sshd.conf | default({}, true)"
+    fail_msg: >-
+      sshd.conf must not contain a Match keyword. Put Match blocks in their own
+      drop-in below /etc/ssh/sshd_config.d.
+    quiet: true
+
+# Whitespace ends the argument, so sshd -t rejects the whole file.
+- name: Reject whitespace in comma-separated algorithm lists
+  ansible.builtin.assert:
+    that:
+      - item.value | string is not search('\s')
+    fail_msg: >-
+      sshd.conf.{{ item.key }} must be a single comma-separated list with no
+      whitespace, got: {{ item.value | string }}
+    quiet: true
+  loop: "{{ sshd.conf | default({}, true) | dict2items
+            | rejectattr('value', 'none')
+            | selectattr('key', 'in', _sshd_algorithm_lists) | list }}"
+  loop_control:
+    label: "{{ item.key }}"
+  vars:
+    _sshd_algorithm_lists:
+      - CASignatureAlgorithms
+      - Ciphers
+      - HostKeyAlgorithms
+      - HostbasedAcceptedAlgorithms
+      - KexAlgorithms
+      - MACs
+      - PubkeyAcceptedAlgorithms
+
+- name: Install sshd
+  become: true
+  ansible.builtin.apt:
+    name: openssh-server
+
+- name: Create the sshd drop-in directory
+  become: true
+  ansible.builtin.file:
+    path: /etc/ssh/sshd_config.d
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Manage the ssh host keys
+  ansible.builtin.include_tasks: host_key_management.yaml
+  when: sshd.host_key_types | default([], true) | length > 0
+
+- name: Configure local sshd settings
+  become: true
+  ansible.builtin.template:
+    src: etc/ssh/sshd_config.d/local.conf.j2
+    dest: /etc/ssh/sshd_config.d/local.conf
+    owner: root
+    group: root
+    mode: "0644"
+    validate: "/usr/sbin/sshd -t -f %s"
+  notify: Restart sshd
+
+- name: Flush handlers
+  ansible.builtin.meta: flush_handlers
