@@ -1,0 +1,8 @@
+---
+- name: Install docker
+  become: true
+  ansible.builtin.apt:
+    name:
+      - docker-compose
+      - docker-cli
+      - docker.io

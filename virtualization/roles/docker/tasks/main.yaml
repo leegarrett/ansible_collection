@@ -1,0 +1,34 @@
+---
+- name: Install docker
+  ansible.builtin.include_tasks: >-
+    {{ lookup('ansible.builtin.first_found', _docker_install_tasks) }}
+  vars:
+    _docker_install_tasks:
+      files:
+        - "{{ ansible_facts.distribution }}.yaml"
+        - "{{ ansible_facts.os_family }}.yaml"
+      paths:
+        - "{{ role_path }}/tasks/install"
+
+- name: configure docker
+  become: true
+  ansible.builtin.copy:
+    content: |
+      {{ docker.config | to_nice_json }}
+    dest: /etc/docker/daemon.json
+    owner: root
+    group: root
+    mode: '0644'
+  notify: restart docker
+
+- name: flush handlers
+  ansible.builtin.meta: flush_handlers
+
+- name: Enable and start docker
+  become: true
+  ansible.builtin.systemd:
+    name: docker.service
+    enabled: true
+    masked: false
+    state: started
+  when: not ansible_check_mode

@@ -1,0 +1,14 @@
+---
+argument_specs:
+  main:
+    short_description: Install and configure the docker daemon
+    options:
+      docker:
+        type: dict
+        description: docker configuration
+        default: {}
+        options:
+          config:
+            type: dict
+            default: {}
+            description: dockerd settings, written to /etc/docker/daemon.json
