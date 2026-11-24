@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+---
+- name: Install needrestart
+  ansible.builtin.include_tasks: install/{{ ansible_facts.os_family }}.yaml
+
+- name: Configure needrestart
+  become: true
+  ansible.builtin.template:
+    src: etc/needrestart/conf.d/ansible.conf.j2
+    dest: /etc/needrestart/conf.d/ansible.conf
+    owner: root
+    group: root
+    mode: "0644"
+    validate: perl -c %s
+  when: needrestart.conf | length > 0
+
+- name: Remove needrestart drop-in
+  become: true
+  ansible.builtin.file:
+    path: /etc/needrestart/conf.d/ansible.conf
+    state: absent
+  when: needrestart.conf | length == 0

@@ -1,0 +1,18 @@
+#jinja2:lstrip_blocks: True
+# {{ ansible_managed }}
+{% macro perl(v) -%}
+  {%- if v is boolean -%}
+    {{ '1' if v else '0' }}
+  {%- elif v is number -%}
+    {{ v }}
+  {%- elif v is mapping -%}
+    { {% for k, i in v.items() %}{{ perl(k) }} => {{ perl(i) }}{{ ', ' if not loop.last }}{% endfor %} }
+  {%- elif v is iterable and v is not string -%}
+    [{% for i in v %}{{ perl(i) }}{{ ', ' if not loop.last }}{% endfor %}]
+  {%- else -%}
+    '{{ v | regex_replace("(['\\\\])", "\\\\\\1") }}'
+  {%- endif -%}
+{%- endmacro %}
+{% for key, value in needrestart.conf.items() %}
+$nrconf{ {{- perl(key) -}} } = {{ perl(value) }};
+{% endfor %}

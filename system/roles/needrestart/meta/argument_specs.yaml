@@ -1,0 +1,280 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+---
+argument_specs:
+  main:
+    short_description: Install and configure needrestart
+    description: >
+      Installs needrestart and writes needrestart.conf to the drop-in
+      /etc/needrestart/conf.d/ansible.conf. An empty conf removes the
+      drop-in, leaving the packaged defaults. Supports Debian, Ubuntu
+      and RHEL (with EPEL enabled).
+    options:
+      needrestart:
+        description: needrestart configuration
+        type: dict
+        default: {}
+        options:
+          conf:
+            description:
+              - >
+                $nrconf keys, see /etc/needrestart/needrestart.conf.
+                Booleans are written as 1/0.
+              - >
+                A list or dict replaces the packaged value entirely rather
+                than extending it, so copy any packaged entries you want to
+                keep.
+              - >
+                Regexes are given as plain strings, e.g. '^/usr/bin/foo$',
+                and are matched unanchored with Perl's =~ /.../, so anchor
+                them with ^ and $ where needed.
+            type: dict
+            default: {}
+            options:
+              blacklist:
+                description:
+                  - >
+                    Regexes matched against the full path of a process's
+                    executable, e.g. /usr/sbin/sshd. A matching process is
+                    never considered outdated, so neither it nor the service
+                    it belongs to is restarted or reported.
+                  - >
+                    For interpreted programs the regexes are also matched
+                    against the script path once it is resolved, e.g.
+                    /usr/bin/unattended-upgrade rather than /usr/bin/python3.
+                  - >
+                    The packaged list ignores sudo, apt-get and memfd
+                    mappings.
+                type: list
+                elements: str
+              blacklist_cont:
+                description:
+                  - >
+                    Regexes matched against container names. Matching
+                    containers are never restarted or reported.
+                  - >
+                    Names have the form "<type> <name>", where type is the
+                    detecting plugin, e.g. "LXC web1", "LXD web1" or
+                    "machined web1".
+                type: list
+                elements: str
+              blacklist_interp:
+                description:
+                  - >
+                    Regexes matched against the source files loaded by
+                    interpreted programs. The interpreter scanners cover
+                    Python, Perl, Ruby and Java; see interpscan.
+                  - >
+                    Entries are file paths, not interpreter names or
+                    binaries. E.g. '^/opt/app/' skips every Python, Perl or
+                    Ruby module or Java .class/.jar file below /opt/app, so
+                    a changed file there no longer marks the process
+                    outdated. To ignore an interpreter process altogether,
+                    use blacklist instead.
+                  - >
+                    The packaged list ignores files below /tmp, /var and
+                    /run.
+                type: list
+                elements: str
+              blacklist_mappings:
+                description:
+                  - >
+                    Regexes matched against the paths of executable memory
+                    mappings in /proc/<pid>/maps, i.e. shared libraries and
+                    other mapped files. A matching mapping that was deleted
+                    or replaced does not mark the process outdated.
+                  - >
+                    Use this for special or temporary mappings, e.g. JIT
+                    caches. The packaged list covers device paths, memfd,
+                    aio and several JIT and temporary paths.
+                type: list
+                elements: str
+              blacklist_rc:
+                description:
+                  - >
+                    Regexes matched against service names, i.e. systemd
+                    unit names like ssh.service, or init script names
+                    without systemd. Matching services are dropped
+                    completely and are neither restarted nor listed.
+                  - >
+                    Prefer override_rc, which keeps the service listed but
+                    deselects it by default.
+                type: list
+                elements: str
+              defno:
+                description: >
+                  In interactive mode, preselect "no" instead of "yes" for
+                  services and containers without an override_rc or
+                  override_cont entry.
+                type: bool
+              exitWhenNoneSelected:
+                description: >
+                  With the Debconf UI, skip the remaining checks if no
+                  service was selected for restart.
+                type: bool
+              has_pam_systemd:
+                description: >
+                  Whether systemd's pam_systemd.so is in use, which lets
+                  needrestart find user sessions through systemd. Set to
+                  false on systemd hosts without it to use legacy session
+                  detection.
+                type: bool
+              hook_d:
+                description: >
+                  Directory of package manager hook scripts, which map an
+                  outdated binary to its package and init scripts.
+                type: path
+              interpscan:
+                description: >
+                  Enable the interpreter scanners, which detect Python,
+                  Perl, Ruby and Java processes whose loaded source files
+                  changed on disk. Scanning can be slow on hosts with many
+                  such processes.
+                type: bool
+              kernel_kfreebsd_glob:
+                description: >
+                  Glob matching kFreeBSD kernel images, used to find the
+                  newest installed kernel.
+                type: str
+              kernel_linux_glob:
+                description: >
+                  Space separated globs matching Linux kernel images, used
+                  to find the newest installed kernel.
+                type: str
+              kernelfilter:
+                description: >
+                  Regex a kernel image filename must match to be considered,
+                  e.g. 'kernel7\.img' on Raspberry Pi OS with several kernel
+                  variants installed side by side.
+                type: str
+              kernelhints:
+                description: >
+                  How to report a pending kernel upgrade (running kernel
+                  older than the newest installed one). 1 shows it and
+                  requires acknowledgement, -1 prints it to stderr only, 0
+                  disables the kernel check.
+                type: int
+                choices: [-1, 0, 1]
+              nagios-status:
+                description: >
+                  Nagios plugin (needrestart -p) return code for each check
+                  that found something; 0 OK, 1 WARNING, 2 CRITICAL, 3
+                  UNKNOWN. Replaces the whole default hash, so set every
+                  key.
+                type: dict
+                options:
+                  containers:
+                    description: Return code for outdated containers.
+                    type: int
+                    choices: [0, 1, 2, 3]
+                  kernel:
+                    description: Return code for a pending kernel upgrade.
+                    type: int
+                    choices: [0, 1, 2, 3]
+                  services:
+                    description: Return code for outdated services.
+                    type: int
+                    choices: [0, 1, 2, 3]
+                  sessions:
+                    description: Return code for outdated user sessions.
+                    type: int
+                    choices: [0, 1, 2, 3]
+                  ucode:
+                    description: Return code for a pending microcode update.
+                    type: int
+                    choices: [0, 1, 2, 3]
+              notify_d:
+                description: >
+                  Directory of scripts that notify users whose sessions run
+                  outdated binaries, see sendnotify.
+                type: path
+              override_cont:
+                description: >
+                  Default selection of containers, mapping a regex on the
+                  container name ("<type> <name>", see blacklist_cont) to
+                  true (restart) or false (don't restart). Deselected
+                  containers are still listed. The first matching regex
+                  wins.
+                type: dict
+              override_rc:
+                description:
+                  - >
+                    Default selection of services, mapping a regex on the
+                    service name (e.g. '^dbus') to true (restart) or false
+                    (don't restart). Deselected services are still listed
+                    and can be selected in interactive mode; in automatic
+                    mode they are skipped.
+                  - >
+                    Regexes are tried in lexical order and the first match
+                    wins. The packaged hash deselects D-Bus, display
+                    managers, networking, gettys, systemd-logind, container
+                    managers and others whose restart would be disruptive.
+                type: dict
+              perlcache:
+                description: >
+                  Persistent cache file for the Perl interpreter scanner's
+                  results, speeding up repeated scans.
+                type: path
+              restart:
+                description: >
+                  What to do with outdated services; (l)ist only,
+                  (i)nteractive or (a)utomatically restart. Interactive
+                  falls back to list only when run non-interactively, e.g.
+                  from unattended-upgrades.
+                type: str
+                choices: [l, i, a]
+              restart_d:
+                description: >
+                  Directory of scripts used to restart services that need
+                  special handling, e.g. dbus or systemd itself.
+                type: path
+              sendnotify:
+                description: >
+                  Notify user sessions running obsolete binaries using the
+                  scripts in notify_d.
+                type: bool
+              skip_mapfiles:
+                description: >
+                  Whether to verify that mapped files still exist. 0 treats
+                  a missing file as outdated, -1 ignores missing files (a
+                  workaround for chroots), 1 disables the check and relies
+                  on the maps file only.
+                type: int
+                choices: [-1, 0, 1]
+              systemctl_combine:
+                description: >
+                  Print one combined systemctl restart command for all
+                  services that were skipped.
+                type: bool
+              tolerance:
+                description: >
+                  Seconds an interpreter's source file may be newer than
+                  the process start before the process counts as outdated.
+                type: int
+              ucodehints:
+                description: >
+                  How to report a pending CPU microcode update. 1 shows it
+                  and requires acknowledgement, -1 prints it to stderr
+                  only, 0 disables the microcode check.
+                type: int
+                choices: [-1, 0, 1]
+              ui:
+                description: >
+                  Preferred UI package. Unset, the highest-priority
+                  available UI is used (Debconf when installed); stdio is
+                  plain terminal output. Runs without a terminal always use
+                  stdio.
+                type: str
+                choices:
+                  - NeedRestart::UI::Debconf
+                  - NeedRestart::UI::stdio
+              ui_mode:
+                description: >
+                  (e)asy only shows a short hint of what is outdated and
+                  forces restart to l (list only), (a)dvanced lists each
+                  service, container and session and honours restart.
+                type: str
+                choices: [e, a]
+              verbosity:
+                description: 0 quiet, 1 normal, 2 verbose (debug output).
+                type: int
+                choices: [0, 1, 2]
