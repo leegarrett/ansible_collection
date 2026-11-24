@@ -1,0 +1,145 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+---
+argument_specs:
+  main:
+    short_description: Install and configure apt-listchanges
+    description: >
+      Installs apt-listchanges and writes apt_listchanges.conf to the drop-in
+      /etc/apt/listchanges.conf.d/ansible.conf, which overrides the
+      debconf-managed /etc/apt/listchanges.conf. An empty conf removes the
+      drop-in.
+    options:
+      apt_listchanges:
+        description: apt-listchanges configuration
+        type: dict
+        default: {}
+        options:
+          conf:
+            description: >
+              INI sections (profiles) of the drop-in, each a dict of options.
+              See apt-listchanges(1). Only the built-in apt and cmdline
+              profiles are supported; custom profiles are not.
+            type: dict
+            default: {}
+            options:
+              apt:
+                description: Profile used when apt-listchanges runs from apt.
+                type: dict
+                options: &apt_listchanges_options
+                  browser:
+                    description: Command used by the browser frontends.
+                    type: str
+                  capture_snapshots:
+                    description: >
+                      Capture state snapshots for debugging; true, false or
+                      auto.
+                    type: raw
+                  confirm:
+                    description: Ask whether to proceed after displaying.
+                    type: bool
+                  debug:
+                    description: Display debugging information.
+                    type: bool
+                  dump_seen:
+                    description: Dump the seen database to stdout.
+                    type: bool
+                  email_address:
+                    description: Mail a copy of the changelogs to this address.
+                    type: str
+                  email_format:
+                    description: Format of the mailed changelogs.
+                    type: str
+                    choices:
+                      - text
+                      - html
+                  filter:
+                    description: >
+                      Command the log frontend pipes output through before
+                      appending it to the log file.
+                    type: str
+                  frontend:
+                    description: How to present the changelogs.
+                    type: str
+                    choices:
+                      - pager
+                      - browser
+                      - xterm-pager
+                      - xterm-browser
+                      - text
+                      - syslog
+                      - log
+                      - mail
+                      - gtk
+                      - none
+                  headers:
+                    description: >
+                      Insert a header before each package's changelog.
+                    type: bool
+                  hide:
+                    description: Hide the gtk window by default.
+                    type: bool
+                  ignore_apt_assume:
+                    description: >
+                      Don't force the text frontend when apt-get runs with
+                      --assume-yes.
+                    type: bool
+                  ignore_debian_frontend:
+                    description: >
+                      Don't force the text frontend when
+                      DEBIAN_FRONTEND=noninteractive.
+                    type: bool
+                  latest:
+                    description: Show only the latest N entries.
+                    type: int
+                  log:
+                    description: File the log frontend appends to.
+                    type: path
+                  no_network:
+                    description: >
+                      Don't download missing changelogs with apt-get
+                      changelog.
+                    type: bool
+                  pager:
+                    description: Command used by the pager frontends.
+                    type: str
+                  reverse:
+                    description: Show changelog entries in reverse order.
+                    type: bool
+                  save_seen:
+                    description: >
+                      Database of already displayed changelogs, or none to
+                      disable it.
+                    type: str
+                  select_frontend:
+                    description: >
+                      Choose the frontend interactively (testing only).
+                    type: bool
+                  show_all:
+                    description: Show all entries, not only newer ones.
+                    type: bool
+                  since:
+                    description: Show entries later than this version.
+                    type: str
+                  snapshot_dir:
+                    description: Directory for captured snapshots.
+                    type: path
+                  titled:
+                    description: Show a title at the beginning of the output.
+                    type: bool
+                  verbose:
+                    description: Display additional information.
+                    type: bool
+                  which:
+                    description: Show news, changelogs or both.
+                    type: str
+                    choices:
+                      - news
+                      - changelogs
+                      - both
+                  xterm:
+                    description: Terminal emulator used by the xterm frontends.
+                    type: str
+              cmdline:
+                description: Profile used when apt-listchanges runs by hand.
+                type: dict
+                options: *apt_listchanges_options

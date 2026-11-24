@@ -1,0 +1,23 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+---
+- name: Install apt-listchanges
+  become: true
+  ansible.builtin.apt:
+    name: apt-listchanges
+
+- name: Configure apt-listchanges
+  become: true
+  ansible.builtin.template:
+    src: etc/apt/listchanges.conf.d/ansible.conf.j2
+    dest: /etc/apt/listchanges.conf.d/ansible.conf
+    owner: root
+    group: root
+    mode: "0644"
+  when: apt_listchanges.conf | length > 0
+
+- name: Remove apt-listchanges drop-in
+  become: true
+  ansible.builtin.file:
+    path: /etc/apt/listchanges.conf.d/ansible.conf
+    state: absent
+  when: apt_listchanges.conf | length == 0

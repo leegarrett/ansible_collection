@@ -1,0 +1,13 @@
+#jinja2:lstrip_blocks: True
+# {{ ansible_managed }}
+{% for section, options in apt_listchanges.conf.items() %}
+
+[{{ section }}]
+  {% for key, value in options.items() %}
+    {% if value is boolean %}
+{{ key }} = {{ 'true' if value else 'false' }}
+    {% else %}
+{{ key }} = {{ value }}
+    {% endif %}
+  {% endfor %}
+{% endfor %}
