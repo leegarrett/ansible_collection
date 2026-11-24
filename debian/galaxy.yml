@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+---
+namespace: leegarrett
+name: debian
+version: 0.1.0
+readme: README.md
+authors:
+  - Lee Garrett <lgarrett@rocketjump.eu>
+description: Collection of roles for base configuration of Debian systems
+license:
+  - AGPL-3.0-or-later
+tags:
+  - debian
+  - apt
+  - linux
+repository: https://github.com/leegarrett/ansible_collection/
+issues: https://github.com/leegarrett/ansible_collection/issues
