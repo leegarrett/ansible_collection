@@ -1,0 +1,16 @@
+#jinja2:lstrip_blocks: True
+// {{ ansible_managed }}
+{% for key, value in unattended_upgrades.conf.items() %}
+  {% if value is iterable and value is not string and value is not mapping %}
+#clear {{ key }};
+{{ key }} {
+    {% for item in value %}
+  "{{ item }}";
+    {% endfor %}
+};
+  {% elif value is boolean %}
+{{ key }} "{{ 'true' if value else 'false' }}";
+  {% else %}
+{{ key }} "{{ value }}";
+  {% endif %}
+{% endfor %}

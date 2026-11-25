@@ -1,0 +1,181 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+---
+argument_specs:
+  main:
+    short_description: Install and configure unattended-upgrades
+    description: >
+      Installs unattended-upgrades and writes unattended_upgrades.conf to the
+      drop-in /etc/apt/apt.conf.d/52unattended-upgrades-local, which
+      overrides 20auto-upgrades and 50unattended-upgrades. An empty conf
+      removes the drop-in, leaving the Debian defaults.
+    options:
+      unattended_upgrades:
+        description: unattended-upgrades configuration
+        type: dict
+        default: {}
+        options:
+          conf:
+            description: >
+              apt.conf options keyed by their full name. A list replaces the
+              packaged list rather than appending to it. See
+              /etc/apt/apt.conf.d/50unattended-upgrades and
+              /usr/lib/apt/apt.systemd.daily.
+            type: dict
+            default: {}
+            options:
+              APT::Periodic::AutocleanInterval:
+                description: Days between apt-get autoclean runs; 0 disables.
+                type: int
+              APT::Periodic::BackupArchiveInterval:
+                description: Days between backups of the package cache.
+                type: int
+              APT::Periodic::BackupLevel:
+                description: Number of package cache backups to keep.
+                type: int
+              APT::Periodic::CleanInterval:
+                description: Days between apt-get clean runs; 0 disables.
+                type: int
+              APT::Periodic::Download-Upgradeable-Packages:
+                description: Days between downloads of upgradeable packages.
+                type: int
+              APT::Periodic::Download-Upgradeable-Packages-Debdelta:
+                description: Use debdelta for downloads.
+                type: int
+              APT::Periodic::Enable:
+                description: Enable the periodic APT jobs; 0 disables all.
+                type: int
+                choices: [0, 1]
+              APT::Periodic::MaxAge:
+                description: Maximum age in days of cached packages.
+                type: int
+              APT::Periodic::MaxSize:
+                description: Maximum size in MB of the package cache.
+                type: int
+              APT::Periodic::MinAge:
+                description: Minimum age in days before a package is cleaned.
+                type: int
+              APT::Periodic::Unattended-Upgrade:
+                description: Days between unattended-upgrade runs; 0 disables.
+                type: int
+              APT::Periodic::Update-Package-Lists:
+                description: Days between apt-get update runs; 0 disables.
+                type: int
+              APT::Periodic::Verbose:
+                description: Verbosity of the periodic job, 0 to 3.
+                type: int
+                choices: [0, 1, 2, 3]
+              Unattended-Upgrade::Allow-APT-Mark-Fallback:
+                description: >
+                  Fall back to apt-mark if a package can't be upgraded
+                  without changing its auto-installed state.
+                type: bool
+              Unattended-Upgrade::Allow-downgrade:
+                description: Allow package downgrades when pinning requires it.
+                type: bool
+              Unattended-Upgrade::Allowed-Origins:
+                description: >
+                  Allowed origins as "origin:archive". Prefer Origins-Pattern.
+                type: list
+                elements: str
+              Unattended-Upgrade::AutoFixInterruptedDpkg:
+                description: Run dpkg --configure -a after an interrupted run.
+                type: bool
+              Unattended-Upgrade::Automatic-Reboot:
+                description: Reboot automatically if /var/run/reboot-required.
+                type: bool
+              Unattended-Upgrade::Automatic-Reboot-Time:
+                description: When to reboot, e.g. "02:00" or "now".
+                type: str
+              Unattended-Upgrade::Automatic-Reboot-WithUsers:
+                description: Reboot even if users are logged in.
+                type: bool
+              Unattended-Upgrade::Debug:
+                description: Print debugging information.
+                type: bool
+              Unattended-Upgrade::DevRelease:
+                description: >
+                  Run on development releases; true, false or auto.
+                type: raw
+              Unattended-Upgrade::Dirs::Plugins:
+                description: Additional plugin directories.
+                type: list
+                elements: path
+              Unattended-Upgrade::IgnoreAppsRequireRestart:
+                description: >
+                  Upgrade packages marked Upgrade-Requires: app-restart.
+                type: bool
+              Unattended-Upgrade::InstallOnShutdown:
+                description: >
+                  Install upgrades on shutdown instead of in the background.
+                type: bool
+              Unattended-Upgrade::Keep-Debs-After-Install:
+                description: Keep downloaded .debs after installing them.
+                type: bool
+              Unattended-Upgrade::LogDir:
+                description: Log directory.
+                type: path
+              Unattended-Upgrade::LogFile:
+                description: Log file.
+                type: path
+              Unattended-Upgrade::Mail:
+                description: Address to mail reports to.
+                type: str
+              Unattended-Upgrade::MailOnlyOnError:
+                description: Legacy, prefer MailReport.
+                type: bool
+              Unattended-Upgrade::MailReport:
+                description: When to mail a report.
+                type: str
+                choices: [always, only-on-error, on-change]
+              Unattended-Upgrade::MinimalSteps:
+                description: Upgrade in small, interruptible steps.
+                type: bool
+              Unattended-Upgrade::OnlyOnACPower:
+                description: Skip upgrades when running on battery.
+                type: bool
+              Unattended-Upgrade::Origins-Pattern:
+                description: >
+                  Allowed origins as apt_preferences(5) match patterns.
+                type: list
+                elements: str
+              Unattended-Upgrade::Package-Blacklist:
+                description: Packages never upgraded (regexes).
+                type: list
+                elements: str
+              Unattended-Upgrade::Package-Whitelist:
+                description: Only upgrade these packages (regexes).
+                type: list
+                elements: str
+              Unattended-Upgrade::Package-Whitelist-Strict:
+                description: Don't upgrade whitelisted packages' dependencies.
+                type: bool
+              Unattended-Upgrade::Remove-New-Unused-Dependencies:
+                description: Remove dependencies that became unused by the run.
+                type: bool
+              Unattended-Upgrade::Remove-Unused-Dependencies:
+                description: Remove all unused dependencies.
+                type: bool
+              Unattended-Upgrade::Remove-Unused-Kernel-Packages:
+                description: Remove unused kernel packages.
+                type: bool
+              Unattended-Upgrade::Sender:
+                description: Sender address of report mails.
+                type: str
+              Unattended-Upgrade::Skip-Updates-On-Metered-Connections:
+                description: Skip upgrades on metered connections.
+                type: bool
+              Unattended-Upgrade::SyslogEnable:
+                description: Also log to syslog.
+                type: bool
+              Unattended-Upgrade::SyslogFacility:
+                description: Syslog facility, e.g. daemon.
+                type: str
+              Unattended-Upgrade::Update-Days:
+                description: >
+                  Days of the week to upgrade on, as names (Mon) or numbers
+                  (0 is Sunday). Empty means every day.
+                type: list
+                elements: str
+              Unattended-Upgrade::Verbose:
+                description: Print info messages.
+                type: bool
