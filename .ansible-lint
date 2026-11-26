@@ -1,0 +1,8 @@
+---
+profile: production
+exclude_paths:
+  # ansible-lint 25.2.1 can't parse module docs with ansible-core 2.19
+  - system/plugins/modules/fwupdmgr.py
+skip_list:
+  - var-naming[no-role-prefix]
+  - meta-runtime[unsupported-version]

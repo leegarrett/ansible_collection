@@ -2,7 +2,7 @@
 
 - name: Install packages for kubectl
   become: true
-  apt:
+  ansible.builtin.apt:
     name:
       - bash-completion
       - kubectl

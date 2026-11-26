@@ -10,7 +10,7 @@
       paths:
         - "{{ role_path }}/tasks/install"
 
-- name: configure docker
+- name: Configure docker
   become: true
   ansible.builtin.copy:
     content: |
@@ -19,9 +19,9 @@
     owner: root
     group: root
     mode: '0644'
-  notify: restart docker
+  notify: Restart docker
 
-- name: flush handlers
+- name: Flush handlers
   ansible.builtin.meta: flush_handlers
 
 - name: Enable and start docker

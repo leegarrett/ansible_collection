@@ -1,11 +1,12 @@
-#SPDX-License-Identifier: APGL-3.0
+# SPDX-License-Identifier: APGL-3.0
 ---
 argument_specs:
   main:
     short_description: Configure Microsoft Visual Studio Code APT repository
     description: |
       Configures the Visual Studio Code Microsoft APT repository.
-      Prevents the vscode package from creating its own conflicting APT repository entry.
+      Prevents the vscode package from creating its own conflicting APT
+      repository entry.
       Manages the GPG signing key for the repository.
       Manages the user settings and the user desktop entry.
     author: Lee Garrett
@@ -75,7 +76,8 @@ argument_specs:
                   xfn5JwgySBIdWWvtOI05gw==
                   =zPfd
                   -----END PGP PUBLIC KEY BLOCK-----
-                description: GPG public key block for verifying repository packages
+                description: >-
+                  GPG public key block for verifying repository packages
                 type: str
           extensions:
             default: []
@@ -93,7 +95,8 @@ argument_specs:
             default: false
             description: >
               Whether to pass the SSH agent on to Visual Studio Code.
-              When false, a user desktop entry overrides the system one and starts
-              Visual Studio Code with SSH_AUTH_SOCK unset, so the forwarded agent
-              does not reach dev containers. When true, the override is removed.
+              When false, a user desktop entry overrides the system one and
+              starts Visual Studio Code with SSH_AUTH_SOCK unset, so the
+              forwarded agent does not reach dev containers. When true, the
+              override is removed.
             type: bool

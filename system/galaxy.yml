@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 ---
 namespace: leegarrett
 name: system
@@ -8,6 +9,10 @@ authors:
 description: Base OS configuration roles
 license:
   - AGPL-3.0-or-later
-tags: []
+tags:
+  - system
+  - linux
 dependencies: {}
 build_ignore: []
+repository: https://github.com/leegarrett/ansible_collection/
+issues: https://github.com/leegarrett/ansible_collection/issues

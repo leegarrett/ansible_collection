@@ -1,3 +1,4 @@
+---
 containerd:
   config:
     version: 3
@@ -15,6 +16,7 @@ crictl:
     debug: false
     runtime-endpoint: >-
       {{ 'unix://'
-      ~ (containerd.config.grpc.address | default('/run/containerd/containerd.sock'))
+      ~ (containerd.config.grpc.address
+         | default('/run/containerd/containerd.sock'))
       }}
     timeout: 10

@@ -13,5 +13,6 @@ tags:
   - web
   - http
   - proxy
+  - infrastructure
 repository: https://github.com/leegarrett/ansible_collection/
 issues: https://github.com/leegarrett/ansible_collection/issues

@@ -1,5 +1,5 @@
 ---
-- name: restart iodined
+- name: Restart iodined
   ansible.builtin.systemd_service:
     name: iodined
     state: restarted

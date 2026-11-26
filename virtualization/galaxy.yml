@@ -13,5 +13,6 @@ tags:
   - virtualization
   - docker
   - qemu
+  - infrastructure
 repository: https://github.com/leegarrett/ansible_collection/
 issues: https://github.com/leegarrett/ansible_collection/issues

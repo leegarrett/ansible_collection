@@ -1,4 +1,4 @@
-#SPDX-License-Identifier: APGL-3.0
+# SPDX-License-Identifier: APGL-3.0
 ---
 vscode:
   apt:
@@ -37,10 +37,11 @@ vscode:
     chat.disableAIFeatures: true
     github.copilot.enable:
       "*": false
-    # Disable telemetry and experiments to enhance privacy and reduce unnecessary data collection
-    # See https://github.com/VSCodium/vscodium/blob/master/docs/telemetry.md#telemetry-in-vscodium
+    # Disable telemetry and experiments to enhance privacy and reduce
+    # unnecessary data collection. See
+    # https://github.com/VSCodium/vscodium/blob/master/docs/telemetry.md#telemetry-in-vscodium
     telemetry.editStats.enabled: false
-    telemetry.telemetryLevel: 'off' # This is a text field, so literal "off"
+    telemetry.telemetryLevel: 'off'  # This is a text field, so literal "off"
     workbench.commandPalette.experimental.enableNaturalLanguageSearch: false
     workbench.enableExperiments: false
     workbench.settings.enableNaturalLanguageSearch: false

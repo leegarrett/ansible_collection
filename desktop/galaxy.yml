@@ -11,5 +11,6 @@ license:
   - AGPL-3.0-or-later
 tags:
   - desktop
+  - linux
 repository: https://github.com/leegarrett/ansible_collection/
 issues: https://github.com/leegarrett/ansible_collection/issues

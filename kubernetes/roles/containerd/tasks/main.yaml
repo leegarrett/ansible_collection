@@ -1,14 +1,15 @@
+---
 ## This role will install, configure, enable and start containerd.
 ## Also installs and configures crictl, useful for debugging.
 
 - name: Install containerd
   become: true
-  apt:
+  ansible.builtin.apt:
     name: "{{ containerd.packages }}"
 
 - name: Create dirs
   become: true
-  file:
+  ansible.builtin.file:
     path: "{{ item }}"
     state: directory
     owner: root
@@ -19,20 +20,22 @@
 
 - name: Configure crictl
   become: true
-  template:
+  ansible.builtin.template:
     src: "{{ item }}.j2"
     dest: "/{{ item }}"
+    mode: "0644"
   loop:
     - etc/crictl.yaml
 
 - name: Configure containerd
   become: true
-  template:
+  ansible.builtin.template:
     src: "{{ item }}.j2"
     dest: "/{{ item }}"
+    mode: "0644"
   loop:
     - etc/containerd/config.toml
-  notify: restart containerd
+  notify: Restart containerd
   when: containerd.config is not none
 
 - name: Remove containerd config
@@ -42,17 +45,17 @@
     state: absent
   loop:
     - /etc/containerd/config.toml
-  notify: restart containerd
+  notify: Restart containerd
   when: containerd.config is none
 
 
 - name: Enable and start containerd
   become: true
-  systemd:
+  ansible.builtin.systemd:
     name: containerd.service
     enabled: true
     masked: false
     state: started
 
-- name: restart containerd
+- name: Flush handlers
   ansible.builtin.meta: flush_handlers

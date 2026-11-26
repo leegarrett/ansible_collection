@@ -1,7 +1,7 @@
 ---
 - name: Install procps
   become: true
-  apt:
+  ansible.builtin.apt:
     name:
       - procps
 

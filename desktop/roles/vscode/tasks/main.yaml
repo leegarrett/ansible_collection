@@ -1,7 +1,7 @@
-#SPDX-License-Identifier: APGL-3.0
+# SPDX-License-Identifier: APGL-3.0
 ---
-- name: vscode pre-flight checks
-  assert:
+- name: Visual Studio Code pre-flight checks
+  ansible.builtin.assert:
     that:
       - "vscode.apt.uris is defined"
       - "vscode.apt.uris | length > 0"
@@ -33,19 +33,19 @@
     name: vscode
     enabled: "{{ vscode.apt.enabled }}"
     types: "{{ vscode.apt.types }}"
-    uris:  "{{ vscode.apt.uris }}"
+    uris: "{{ vscode.apt.uris }}"
     suites: "{{ vscode.apt.suites }}"
     components: "{{ vscode.apt.components }}"
     signed_by: "{{ vscode.apt.signed_by }}"
-  notify: apt update
+  notify: Run apt update
   become: true
 
-- name: update apt cache
+- name: Flush handlers
   ansible.builtin.meta: flush_handlers
 
 - name: Install Visual Studio Code
   become: true
-  apt:
+  ansible.builtin.apt:
     name:
       - code
 
@@ -57,18 +57,24 @@
 
 - name: Install Visual Studio Code extensions
   ansible.builtin.command: code --install-extension {{ item }}
-  loop: "{{ vscode.extensions | ansible.builtin.difference(installed_extensions.stdout_lines) }}"
+  loop: >-
+    {{ vscode.extensions
+       | ansible.builtin.difference(installed_extensions.stdout_lines) }}
+  changed_when: true
   loop_control:
     label: "Installing {{ item }}"
 
 - name: Remove unwanted Visual Studio Code extensions
   ansible.builtin.command: code --uninstall-extension {{ item }}
-  loop: "{{ installed_extensions.stdout_lines | ansible.builtin.difference(vscode.extensions) }}"
+  loop: >-
+    {{ installed_extensions.stdout_lines
+       | ansible.builtin.difference(vscode.extensions) }}
+  changed_when: true
   loop_control:
     label: "Removing {{ item }}"
 
 - name: Configure Visual Studio Code settings
-  template:
+  ansible.builtin.template:
     src: vscode_settings.json.j2
     dest: "{{ ansible_facts['user_dir'] }}/.config/Code/User/settings.json"
     mode: '0644'
@@ -98,16 +104,21 @@
       ansible.builtin.copy:
         content: >-
           {{ _vscode_system_desktop_entry.content | ansible.builtin.b64decode
-             | ansible.builtin.regex_replace('^Exec=/usr/share/code/code',
-                                             'Exec=env -u SSH_AUTH_SOCK /usr/share/code/code',
-                                             multiline=true) }}
-        dest: "{{ ansible_facts['user_dir'] }}/.local/share/applications/com.microsoft.VSCode.desktop"
+             | ansible.builtin.regex_replace(
+                 '^Exec=/usr/share/code/code',
+                 'Exec=env -u SSH_AUTH_SOCK /usr/share/code/code',
+                 multiline=true) }}
+        dest: >-
+          {{ ansible_facts['user_dir']
+             ~ '/.local/share/applications/com.microsoft.VSCode.desktop' }}
         mode: '0644'
       notify: Update desktop database
 
 - name: Drop the Visual Studio Code desktop entry override
   ansible.builtin.file:
-    path: "{{ ansible_facts['user_dir'] }}/.local/share/applications/com.microsoft.VSCode.desktop"
+    path: >-
+      {{ ansible_facts['user_dir']
+         ~ '/.local/share/applications/com.microsoft.VSCode.desktop' }}
     state: absent
   when: vscode.ssh_agent_forwarding
   notify: Update desktop database

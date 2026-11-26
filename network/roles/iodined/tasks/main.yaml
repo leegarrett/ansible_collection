@@ -6,7 +6,7 @@
     src: etc/default/iodine.j2
     dest: /etc/default/iodine
     mode: '0600'
-  notify: restart iodined
+  notify: Restart iodined
 
 - name: Installing iodine
   become: true
