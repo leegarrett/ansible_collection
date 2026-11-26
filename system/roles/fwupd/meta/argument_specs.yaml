@@ -25,9 +25,11 @@ argument_specs:
               Debian:
                 - fwupd
                 - fwupd-amd64-signed
+                - udisks2
               Ubuntu:
                 - fwupd
                 - fwupd-signed
+                - udisks2
             description: >
               Lists of packages to install, keyed by
               ansible_facts.distribution.

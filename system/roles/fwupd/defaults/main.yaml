@@ -6,6 +6,8 @@ fwupd:
     Debian:
       - fwupd
       - fwupd-amd64-signed
+      - udisks2  # needed to detect the ESP
     Ubuntu:
       - fwupd
       - fwupd-signed
+      - udisks2  # needed to detect the ESP
