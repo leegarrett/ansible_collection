@@ -1,0 +1,5 @@
+#jinja2:lstrip_blocks: True
+# {{ ansible_managed }}
+{# unfortunately to_nice_yaml is a little bit buggy.
+See https://github.com/yaml/pyyaml/issues/234 for details #}
+{{ thinkfan.conf | to_nice_yaml }}

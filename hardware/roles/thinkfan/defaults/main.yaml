@@ -1,0 +1,56 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+---
+thinkfan:
+  fan_control: true
+  daemon_args: "-b15"
+  conf: {}
+  profiles: []
+
+__thinkfan:
+  # A profile mirrors the layout of thinkfan, so the selected ones fold in with
+  # a recursive combine. Later profiles win, thinkfan wins over every profile.
+  profiles:
+    thinkpad_t490:
+      conf:
+        sensors:
+          # coretemp package id 0
+          - hwmon: /sys/class/hwmon
+            name: coretemp
+            indices: [1]
+
+          # ACPI thermal zone
+          - hwmon: /sys/class/hwmon
+            name: acpitz
+            indices: [1]
+
+          # platform controller hub
+          - hwmon: /sys/class/hwmon
+            name: pch_cannonlake
+            indices: [1]
+
+          # NVMe composite sensor
+          - hwmon: /sys/class/hwmon
+            name: nvme
+            indices: [1]
+        fans:
+          - tpacpi: /proc/acpi/ibm/fan
+
+        levels:
+          - speed: 'level 0'
+            upper_limit: [58, 58, 58, 58]
+
+          - speed: 'level 1'
+            lower_limit: [39, 39, 39, 39]
+            upper_limit: [62, 65, 65, 65]
+
+          - speed: 'level 2'
+            lower_limit: [55, 55, 55, 55]
+            upper_limit: [65, 68, 65, 65]
+
+          - speed: 'level 3'
+            lower_limit: [63, 63, 65, 65]
+            upper_limit: [80, 89, 85, 85]
+
+          - speed: 'level 4'
+            lower_limit: [70, 79, 75, 70]
+            upper_limit: [85, 95, 90, 90]

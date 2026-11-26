@@ -1,0 +1,3 @@
+#jinja2:lstrip_blocks: True
+# {{ ansible_managed }}
+options thinkpad_acpi fan_control={{ "1" if thinkfan.fan_control | bool else "0" }}

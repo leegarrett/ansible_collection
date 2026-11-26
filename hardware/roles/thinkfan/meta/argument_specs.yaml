@@ -1,0 +1,51 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+---
+argument_specs:
+  main:
+    short_description: Install and configure thinkfan
+    description: >
+      Installs thinkfan and lm-sensors, enables fan control in thinkpad_acpi,
+      writes thinkfan.conf to /etc/thinkfan.yaml and starts thinkfan.service.
+      Fails unless thinkfan.conf is set, either directly or by a profile.
+    author:
+      - Lee Garrett
+    options:
+      thinkfan:
+        description: thinkfan settings.
+        type: dict
+        default: {}
+        options:
+          fan_control:
+            description: >
+              Enable the thinkpad_acpi fan_control module option, written to
+              /etc/modprobe.d/thinkfan.conf as 1 or 0. Must be true for
+              thinkfan to control the fan. Takes effect once thinkpad_acpi is
+              reloaded.
+            type: bool
+            default: true
+          daemon_args:
+            description: >
+              Command line arguments for thinkfan, written to
+              /etc/default/thinkfan as DAEMON_ARGS. See thinkfan(1).
+            type: str
+            default: "-b15"
+          conf:
+            description: >
+              thinkfan configuration, rendered verbatim as YAML to
+              /etc/thinkfan.yaml. See thinkfan.conf(5). The lower_limit and
+              upper_limit of each level must have one entry per sensor. This is
+              not checked if a tpacpi sensor has no indices.
+            type: dict
+            default: {}
+          profiles:
+            description: >
+              Canned configurations to fold into the rest of thinkfan, applied
+              in the listed order. A profile carries the same keys as thinkfan
+              itself. Precedence runs from weakest to strongest: earlier
+              profile, later profile, then whatever thinkfan sets explicitly.
+              Listing an unknown profile is an error. Available profiles are
+              thinkpad_t490 (coretemp, acpitz, pch_cannonlake and nvme
+              sensors, tpacpi fan, five levels).
+            type: list
+            elements: str
+            default: []

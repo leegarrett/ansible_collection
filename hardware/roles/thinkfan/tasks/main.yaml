@@ -1,0 +1,86 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+---
+- name: Apply the selected thinkfan profiles
+  ansible.builtin.include_tasks: profiles.yaml
+  when: thinkfan.profiles | default([], true) | length > 0
+
+- name: Require a thinkfan configuration
+  ansible.builtin.assert:
+    that:
+      - thinkfan.conf | default({}, true) | length > 0
+    fail_msg: >-
+      thinkfan.conf is empty. Set it or select one of the profiles:
+      {{ __thinkfan.profiles | list | join(', ') }}.
+    quiet: true
+
+# A tpacpi sensor without indices uses every sensor the firmware reports.
+- name: Require one limit per sensor in each thinkfan level
+  ansible.builtin.assert:
+    that:
+      - >-
+        item.lower_limit is not defined
+        or item.lower_limit | length == _thinkfan_sensor_count | int
+      - >-
+        item.upper_limit is not defined
+        or item.upper_limit | length == _thinkfan_sensor_count | int
+    fail_msg: >-
+      thinkfan.conf level "{{ item.speed }}" must have one lower_limit and
+      upper_limit entry per sensor, i.e. {{ _thinkfan_sensor_count }}.
+    quiet: true
+  loop: "{{ thinkfan.conf.levels | default([]) | select('mapping') | list }}"
+  loop_control:
+    label: "{{ item.speed }}"
+  vars:
+    _thinkfan_sensor_count: >-
+      {{ thinkfan.conf.sensors | default([])
+         | map(attribute='indices', default=[0]) | map('length') | sum }}
+  when: >-
+    thinkfan.conf.sensors | default([]) | selectattr('tpacpi', 'defined')
+    | rejectattr('indices', 'defined') | list | length == 0
+
+- name: Install thinkfan
+  become: true
+  ansible.builtin.apt:
+    name:
+      - lm-sensors
+      - thinkfan
+  register: _thinkfan_apt
+
+- name: Configure the thinkfan daemon arguments
+  become: true
+  ansible.builtin.template:
+    src: etc/default/thinkfan.j2
+    dest: /etc/default/thinkfan
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart thinkfan
+
+- name: Configure thinkfan
+  become: true
+  ansible.builtin.template:
+    src: etc/thinkfan.yaml.j2
+    dest: /etc/thinkfan.yaml
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Reload thinkfan
+
+# Takes effect once thinkpad_acpi is reloaded, i.e. usually on the next boot.
+- name: Configure thinkpad_acpi fan control
+  become: true
+  ansible.builtin.template:
+    src: etc/modprobe.d/thinkfan.conf.j2
+    dest: /etc/modprobe.d/thinkfan.conf
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Enable and start thinkfan
+  become: true
+  ansible.builtin.systemd_service:
+    name: thinkfan
+    state: started
+    enabled: true
+  # The unit doesn't exist yet in check mode on a fresh install
+  when: not (ansible_check_mode and _thinkfan_apt is changed)

@@ -1,0 +1,25 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+---
+- name: Reject unknown thinkfan profiles
+  ansible.builtin.assert:
+    that:
+      - _thinkfan_unknown | length == 0
+    fail_msg: >-
+      thinkfan.profiles lists unknown profiles:
+      {{ _thinkfan_unknown | join(', ') }}.
+      Available profiles: {{ __thinkfan.profiles | list | join(', ') }}.
+    quiet: true
+  vars:
+    _thinkfan_unknown: >-
+      {{ thinkfan.profiles | difference(__thinkfan.profiles | list) }}
+
+# Null keys are dropped from thinkfan first so they don't blank out a profile.
+- name: Fold the selected profiles into the thinkfan configuration
+  ansible.builtin.set_fact:  # noqa: jinja[invalid]
+    thinkfan: "{{ (_thinkfan_selected + [_thinkfan_set])
+                  | combine(recursive=true) }}"
+  vars:
+    _thinkfan_selected: "{{ thinkfan.profiles
+                            | map('extract', __thinkfan.profiles) | list }}"
+    _thinkfan_set: "{{ thinkfan | dict2items | rejectattr('value', 'none')
+                       | items2dict }}"
