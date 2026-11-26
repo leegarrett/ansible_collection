@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+---
+- name: Update firmware
+  become: true
+  leegarrett.hardware.fwupdmgr:
+    refresh: "{{ fwupd.update.refresh }}"
+    force_refresh: "{{ fwupd.update.force_refresh }}"
+    devices: "{{ fwupd.update.devices }}"
+    filter: "{{ fwupd.update.filter | default(omit, true) }}"
+    security_fix: "{{ fwupd.update.security_fix }}"
+  register: _fwupd_update
+
+- name: Report firmware updates
+  ansible.builtin.debug:
+    msg:
+      updated: "{{ _fwupd_update.updated }}"
+      reboot_required: "{{ _fwupd_update.reboot_required }}"
+  when: _fwupd_update.updated | length > 0

@@ -34,3 +34,42 @@ argument_specs:
             description: >
               Lists of packages to install, keyed by
               ansible_facts.distribution.
+  update:
+    short_description: Update firmware via fwupd
+    description: |
+      Installs all pending firmware updates with the
+      leegarrett.hardware.fwupdmgr module. Never reboots; updates staged for
+      the next boot are applied once the host is rebooted. Requires fwupd to
+      be installed, e.g. by the main entry point.
+    author: Lee Garrett
+    options:
+      fwupd:
+        type: dict
+        description: fwupd settings.
+        options:
+          update:
+            type: dict
+            description: Options passed to leegarrett.hardware.fwupdmgr.
+            options:
+              refresh:
+                type: bool
+                default: true
+                description: Refresh the fwupd metadata first.
+              force_refresh:
+                type: bool
+                default: false
+                description: Refresh even if the metadata is considered recent.
+              devices:
+                type: list
+                elements: str
+                default: []
+                description: Device IDs or GUIDs to update. Empty means all.
+              filter:
+                type: str
+                description: >
+                  Device flag filter passed as --filter, e.g.
+                  internal,~needs-reboot.
+              security_fix:
+                type: bool
+                default: false
+                description: Let fwupdmgr fix host security attributes.

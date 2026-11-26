@@ -12,3 +12,9 @@ fwupd:
       - fwupd
       - fwupd-signed
       - udisks2  # needed to detect the ESP
+  update:
+    refresh: true
+    force_refresh: false
+    devices: []
+    filter:
+    security_fix: false
