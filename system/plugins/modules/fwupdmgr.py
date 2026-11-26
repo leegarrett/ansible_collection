@@ -1,5 +1,6 @@
 #!/usr/bin/python
 # Copyright: Lee Garrett
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # GNU Affero General Public License v3.0+ (see https://www.gnu.org/licenses/agpl-3.0.txt)
 
 from __future__ import annotations
