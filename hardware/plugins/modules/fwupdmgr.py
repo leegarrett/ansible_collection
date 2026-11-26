@@ -65,18 +65,18 @@ requirements:
 EXAMPLES = r"""
 - name: Update all firmware
   become: true
-  leegarrett.system.fwupdmgr:
+  leegarrett.hardware.fwupdmgr:
 
 - name: Report pending updates without refreshing or installing
   become: true
-  leegarrett.system.fwupdmgr:
+  leegarrett.hardware.fwupdmgr:
     refresh: false
     update: false
   register: _fwupd
 
 - name: Update internal devices only
   become: true
-  leegarrett.system.fwupdmgr:
+  leegarrett.hardware.fwupdmgr:
     filter: internal
 """
 
