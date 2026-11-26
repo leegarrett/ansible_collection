@@ -15,7 +15,7 @@ Proposed grouping, by what someone would install together:
 | leegarrett.debian_dev     | apt_cacher_ng, apt_pyxian, git_buildpackage, mini_dinstall, pyxian, sbuild                                                           |               |                      |
 | leegarrett.debian         | apt_debian, borgmatic, locales, rsyslog, timesync                                                                                    | upgrade       |                      |
 | leegarrett.desktop        | firefox, flatpak, gnome, kodi, nextcloud_desktop, noise_suppression, snapd, vscode, vscode_continue_langdock                         |               |                      |
-| leegarrett.hardware       | chameleon_mini, fwupd, hp_color_laserjet_mfp_m277dw, logitech_g502, physical_host, proxmark3, raid_controller, smartd, thinkfan, zfs |               |                      |
+| leegarrett.hardware       | chameleon_mini, fwupd, hp_color_laserjet_mfp_m277dw, hwraid, logitech_g502, physical_host, proxmark3, smartd, thinkfan, zfs          |               |                      |
 | leegarrett.virtualization | apt_docker, docker, qemu_guest, qemu_host                                                                                            |               |                      |
 | leegarrett.games          | ark, mumble, retroarch, steamcmd                                                                                                     |               |                      |
 | leegarrett.windows        | apply_win_updates, bootstrap_windows, win_firefox, win_gaming_overlay, winfsp                                                        | bootstrap     |                      |
